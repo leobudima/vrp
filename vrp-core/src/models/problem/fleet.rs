@@ -12,107 +12,6 @@ use std::sync::Arc;
 
 custom_dimension!(pub VehicleId typeof String);
 
-/// Represents a cost tier with a threshold and associated cost.
-#[derive(Clone, Debug)]
-pub struct CostTier {
-    /// The threshold value above which this tier applies.
-    pub threshold: Float,
-    /// The cost per unit for this tier.
-    pub cost: Float,
-}
-
-/// Represents either a fixed cost or a list of tiered costs.
-#[derive(Clone, Debug)]
-pub enum TieredCost {
-    /// Fixed cost per unit.
-    Fixed(Float),
-    /// List of cost tiers.
-    Tiered(Vec<CostTier>),
-}
-
-impl TieredCost {
-    /// Calculates the cost rate for a given total value using the appropriate tier.
-    pub fn calculate_rate(&self, total_value: Float) -> Float {
-        match self {
-            TieredCost::Fixed(cost) => *cost,
-            TieredCost::Tiered(tiers) => {
-                // Find the appropriate tier based on the total value
-                // Tiers should be sorted by threshold in ascending order
-                let applicable_tier = tiers
-                    .iter()
-                    .rev() // Start from highest threshold
-                    .find(|tier| total_value >= tier.threshold);
-                
-                applicable_tier.map(|tier| tier.cost).unwrap_or(0.0)
-            }
-        }
-    }
-
-    /// Creates a fixed cost.
-    pub fn fixed(cost: Float) -> Self {
-        TieredCost::Fixed(cost)
-    }
-
-    /// Creates a tiered cost from a list of tiers.
-    pub fn tiered(mut tiers: Vec<CostTier>) -> Self {
-        // Sort tiers by threshold in ascending order
-        tiers.sort_by(|a, b| a.threshold.partial_cmp(&b.threshold).unwrap());
-        TieredCost::Tiered(tiers)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tiered_cost_calculation() {
-        // Test case matching our validation scenario
-        let distance_tiers = vec![
-            CostTier { threshold: 0.0, cost: 1.0 },
-            CostTier { threshold: 5000.0, cost: 2.0 },
-            CostTier { threshold: 10000.0, cost: 3.0 },
-        ];
-        
-        let time_tiers = vec![
-            CostTier { threshold: 0.0, cost: 0.5 },
-            CostTier { threshold: 600.0, cost: 1.0 },
-            CostTier { threshold: 1200.0, cost: 1.5 },
-        ];
-        
-        let distance_tiered_cost = TieredCost::tiered(distance_tiers);
-        let time_tiered_cost = TieredCost::tiered(time_tiers);
-        
-        // Test values from our validation case
-        let total_distance = 7976.0;
-        let total_time = 798.0;
-        
-        let distance_rate = distance_tiered_cost.calculate_rate(total_distance);
-        let time_rate = time_tiered_cost.calculate_rate(total_time);
-        
-        // Verify tier selection
-        assert_eq!(distance_rate, 2.0, "Distance {} should use tier rate 2.0", total_distance);
-        assert_eq!(time_rate, 1.0, "Time {} should use tier rate 1.0", total_time);
-        
-        // Calculate expected total cost
-        let distance_cost = total_distance * distance_rate;
-        let time_cost = total_time * time_rate;
-        let service_cost = 300.0 * time_rate; // Service uses same rate as time
-        let fixed_cost = 100.0;
-        
-        let expected_total = fixed_cost + distance_cost + time_cost + service_cost;
-        
-        println!("Tiered cost calculation test:");
-        println!("Distance: {} * {} = {}", total_distance, distance_rate, distance_cost);
-        println!("Driving time: {} * {} = {}", total_time, time_rate, time_cost);
-        println!("Service time: {} * {} = {}", 300.0, time_rate, service_cost);
-        println!("Fixed: {}", fixed_cost);
-        println!("Expected total: {}", expected_total);
-        
-        assert_eq!(expected_total, 17150.0, "Expected total cost should be 17150.0");
-    }
-}
-
 /// Represents operating costs for driver and vehicle.
 #[derive(Clone, Debug)]
 pub struct Costs {
@@ -128,15 +27,7 @@ pub struct Costs {
     pub per_service_time: Float,
 }
 
-/// Represents tiered operating costs for driver and vehicle.
-/// This is used alongside the regular Costs structure for backward compatibility.
-#[derive(Clone, Debug)]
-pub struct TieredCosts {
-    /// Cost per distance unit - can be tiered.
-    pub per_distance: TieredCost,
-    /// Cost per driving time unit - can be tiered.
-    pub per_driving_time: TieredCost,
-}
+
 
 /// Represents driver detail (reserved for future use).
 #[derive(Clone, Hash, Eq, PartialEq)]

@@ -107,33 +107,206 @@ impl ActivityCost for SimpleActivityCost {
 
 /// A coordinated cost calculator that implements both ActivityCost and TransportCost traits
 /// and shares route totals calculation between them for consistent tiered cost evaluation.
+/// Includes caching to avoid recalculating route totals repeatedly.
 pub struct CoordinatedCostCalculator {
     transport_cost: Arc<dyn TransportCost>,
+    activity_cost: Arc<dyn ActivityCost>,
+    // Cache for route totals: (route_hash, (distance, duration))
+    route_cache: std::sync::Mutex<std::collections::HashMap<u64, (Distance, Duration)>>,
 }
 
 impl CoordinatedCostCalculator {
     /// Creates a new coordinated cost calculator.
     pub fn new(transport_cost: Arc<dyn TransportCost>) -> Self {
-        Self { transport_cost }
+        Self {
+            transport_cost,
+            activity_cost: Arc::new(SimpleActivityCost::default()),
+            route_cache: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+
+    /// Creates a new coordinated cost calculator with custom activity cost.
+    pub fn with_activity_cost(transport_cost: Arc<dyn TransportCost>, activity_cost: Arc<dyn ActivityCost>) -> Self {
+        Self {
+            transport_cost,
+            activity_cost,
+            route_cache: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+
+    /// Calculates a hash for the route to use as a cache key.
+    /// This is a simple hash based on the route's activity locations and actor info.
+    fn calculate_route_hash(&self, route: &Route) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        
+        // Hash the actor information
+        route.actor.vehicle.profile.index.hash(&mut hasher);
+        route.actor.vehicle.profile.scale.to_bits().hash(&mut hasher);
+        
+        // Hash the sequence of locations in the route
+        for activity in route.tour.all_activities() {
+            (activity.place.location as u64).hash(&mut hasher);
+        }
+        
+        hasher.finish()
+    }
+
+    /// Gets the cached route totals or calculates them if not cached.
+    fn get_or_calculate_route_totals(&self, route: &Route) -> (Distance, Duration) {
+        let route_hash = self.calculate_route_hash(route);
+        
+        // Try to get from cache first
+        if let Ok(cache) = self.route_cache.lock() {
+            if let Some(&totals) = cache.get(&route_hash) {
+                return totals;
+            }
+        }
+        
+        // Calculate new totals
+        let totals = self.transport_cost.get_route_totals(route);
+        
+        // Cache the result
+        if let Ok(mut cache) = self.route_cache.lock() {
+            // Limit cache size to prevent memory growth
+            if cache.len() > 1000 {
+                cache.clear(); // Simple eviction strategy
+            }
+            cache.insert(route_hash, totals);
+        }
+        
+        totals
+    }
+
+    /// Clears the route totals cache. Useful for testing or when memory usage is a concern.
+    pub fn clear_cache(&self) {
+        if let Ok(mut cache) = self.route_cache.lock() {
+            cache.clear();
+        }
+    }
+
+    /// Returns the current cache size. Useful for monitoring and testing.
+    pub fn cache_size(&self) -> usize {
+        self.route_cache.lock().map(|cache| cache.len()).unwrap_or(0)
     }
 }
 
 impl ActivityCost for CoordinatedCostCalculator {
     fn calculate_route_totals(&self, route: &Route) -> (Distance, Duration) {
-        // Use the same route totals calculation as TransportCost
-        self.transport_cost.get_route_totals(route)
+        // Use cached route totals calculation
+        self.get_or_calculate_route_totals(route)
     }
 
-    fn estimate_departure(&self, _route: &Route, activity: &Activity, arrival: Timestamp) -> Timestamp {
-        arrival.max(activity.place.time.start) + activity.place.duration
+    fn cost_with_route_totals(
+        &self, 
+        route: &Route, 
+        activity: &Activity, 
+        arrival: Timestamp,
+        route_totals: Option<(Distance, Duration)>
+    ) -> Cost {
+        // Use provided route totals or get from cache
+        let route_totals = route_totals.unwrap_or_else(|| self.get_or_calculate_route_totals(route));
+        
+        let actor = route.actor.as_ref();
+        let waiting = if activity.place.time.start > arrival { activity.place.time.start - arrival } else { 0. };
+        let service = activity.place.duration;
+
+        // Check if tiered costs are available for time-based calculations
+        let (driver_service_rate, vehicle_service_rate, driver_waiting_rate, vehicle_waiting_rate) = 
+            if actor.driver.tiered_costs.is_some() || actor.vehicle.tiered_costs.is_some() {
+                let (_, total_duration) = route_totals;
+
+                let driver_service_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.driver.costs.per_service_time);
+                    
+                let vehicle_service_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.vehicle.costs.per_service_time);
+                    
+                let driver_waiting_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.driver.costs.per_waiting_time);
+                    
+                let vehicle_waiting_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.vehicle.costs.per_waiting_time);
+                    
+                (driver_service_rate, vehicle_service_rate, driver_waiting_rate, vehicle_waiting_rate)
+            } else {
+                // Use fixed costs
+                (actor.driver.costs.per_service_time, actor.vehicle.costs.per_service_time,
+                 actor.driver.costs.per_waiting_time, actor.vehicle.costs.per_waiting_time)
+            };
+
+        waiting * (driver_waiting_rate + vehicle_waiting_rate)
+            + service * (driver_service_rate + vehicle_service_rate)
     }
 
-    fn estimate_arrival(&self, _route: &Route, activity: &Activity, departure: Timestamp) -> Timestamp {
-        activity.place.time.end.min(departure - activity.place.duration)
+    fn estimate_departure(&self, route: &Route, activity: &Activity, arrival: Timestamp) -> Timestamp {
+        self.activity_cost.estimate_departure(route, activity, arrival)
+    }
+
+    fn estimate_arrival(&self, route: &Route, activity: &Activity, departure: Timestamp) -> Timestamp {
+        self.activity_cost.estimate_arrival(route, activity, departure)
     }
 }
 
 impl TransportCost for CoordinatedCostCalculator {
+    fn cost(&self, route: &Route, from: Location, to: Location, travel_time: TravelTime) -> Cost {
+        let actor = route.actor.as_ref();
+
+        let distance = self.distance(route, from, to, travel_time);
+        let duration = self.duration(route, from, to, travel_time);
+
+        // Check if tiered costs are available, otherwise use fixed costs
+        let (driver_distance_rate, vehicle_distance_rate, driver_time_rate, vehicle_time_rate) = 
+            if actor.driver.tiered_costs.is_some() || actor.vehicle.tiered_costs.is_some() {
+                // Use cached route totals for tiered cost evaluation
+                let (total_distance, total_duration) = self.get_or_calculate_route_totals(route);
+
+                let driver_distance_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_distance.calculate_rate(total_distance))
+                    .unwrap_or(actor.driver.costs.per_distance);
+                    
+                let vehicle_distance_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_distance.calculate_rate(total_distance))
+                    .unwrap_or(actor.vehicle.costs.per_distance);
+                    
+                let driver_time_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.driver.costs.per_driving_time);
+                    
+                let vehicle_time_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.vehicle.costs.per_driving_time);
+                    
+                (driver_distance_rate, vehicle_distance_rate, driver_time_rate, vehicle_time_rate)
+            } else {
+                // Use fixed costs
+                (actor.driver.costs.per_distance, actor.vehicle.costs.per_distance,
+                 actor.driver.costs.per_driving_time, actor.vehicle.costs.per_driving_time)
+            };
+
+        distance * (driver_distance_rate + vehicle_distance_rate)
+            + duration * (driver_time_rate + vehicle_time_rate)
+    }
+
+    fn get_route_totals(&self, route: &Route) -> (Distance, Duration) {
+        // Use cached implementation
+        self.get_or_calculate_route_totals(route)
+    }
+
     fn duration_approx(&self, profile: &Profile, from: Location, to: Location) -> Duration {
         self.transport_cost.duration_approx(profile, from, to)
     }

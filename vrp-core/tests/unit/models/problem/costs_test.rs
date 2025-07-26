@@ -1,5 +1,6 @@
 use super::*;
 use crate::helpers::models::solution::test_actor_with_profile;
+use crate::helpers::models::problem::TestSingleBuilder;
 
 fn create_matrix_data(
     profile: Profile,
@@ -195,12 +196,12 @@ mod tiered_costs {
                 CostTier { threshold: 0.0, cost: 1.0 },
                 CostTier { threshold: 100.0, cost: 2.0 },
                 CostTier { threshold: 200.0, cost: 3.0 },
-            ]),
+            ]).unwrap(),
             per_driving_time: TieredCost::tiered(vec![
                 CostTier { threshold: 0.0, cost: 0.5 },
                 CostTier { threshold: 50.0, cost: 1.0 },
                 CostTier { threshold: 100.0, cost: 1.5 },
-            ]),
+            ]).unwrap(),
         }
     }
 
@@ -227,7 +228,7 @@ mod tiered_costs {
             CostTier { threshold: 0.0, cost: 1.0 },
             CostTier { threshold: 100.0, cost: 2.0 },
             CostTier { threshold: 200.0, cost: 3.0 },
-        ]);
+        ]).unwrap();
 
         // Test tier boundaries
         assert_eq!(distance_cost.calculate_rate(0.0), 1.0);
@@ -261,8 +262,8 @@ mod tiered_costs {
         let mut tour = Tour::new(&actor);
         
         // Add activities at different locations - use helper to create proper activities
-        let job1 = Arc::new(test_single_job());
-        let job2 = Arc::new(test_single_job());
+        let job1 = TestSingleBuilder::default().build_shared();
+        let job2 = TestSingleBuilder::default().build_shared();
         
         let activity1 = Activity {
             place: SolutionPlace { idx: 0, location: 1, duration: 10., time: TimeWindow::new(0., 1000.) },
@@ -290,9 +291,9 @@ mod tiered_costs {
         assert_eq!(route_totals_1, route_totals_2);
         
         // Verify route totals are calculated correctly
-        // Route: 0 -> 1 -> 2, so distances: 100 + 300 = 400, durations: 10 + 30 = 40
-        assert_eq!(route_totals_1.0, 400.0); // total distance
-        assert_eq!(route_totals_1.1, 40.0);  // total duration
+        // Route: 0 -> 1 -> 2 -> 0, so distances: 100 + 300 + 200 = 600, durations: 10 + 30 + 20 = 60
+        assert_eq!(route_totals_1.0, 600.0); // total distance
+        assert_eq!(route_totals_1.1, 60.0);  // total duration
     }
 
     #[test]
@@ -313,7 +314,7 @@ mod tiered_costs {
         });
         
         let mut tour = Tour::new(&actor);
-        let job = Arc::new(test_single_job());
+        let job = TestSingleBuilder::default().build_shared();
         tour.insert_at(Activity {
             place: SolutionPlace { idx: 0, location: 1, duration: 10., time: TimeWindow::new(0., 1000.) },
             schedule: crate::models::common::Schedule { arrival: 10., departure: 20. },
@@ -326,7 +327,7 @@ mod tiered_costs {
         // Calculate transport cost between locations 0 and 1
         let cost = TransportCost::cost(&calculator, &route, 0, 1, TravelTime::Departure(0.));
         
-        // Route totals: distance=100, duration=10
+        // Route totals: distance=100, duration=10 (for single segment route 0->1)
         // Distance tier: 100 -> rate 2.0, so distance cost = 100 * 2.0 = 200
         // Duration tier: 10 -> rate 0.5, so duration cost = 10 * 0.5 = 5
         // Expected total: 200 + 5 = 205
@@ -351,7 +352,7 @@ mod tiered_costs {
         });
         
         let mut tour = Tour::new(&actor);
-        let job = Arc::new(test_single_job());
+        let job = TestSingleBuilder::default().build_shared();
         let activity = Activity {
             place: SolutionPlace { idx: 0, location: 1, duration: 30., time: TimeWindow::new(0., 1000.) },
             schedule: crate::models::common::Schedule { arrival: 10., departure: 40. },
@@ -366,7 +367,7 @@ mod tiered_costs {
         let activity_ref = route.tour.get(1).unwrap();
         let cost = ActivityCost::cost(&calculator, &route, activity_ref, 10.); // arrival = 10, start = 0, no waiting
         
-        // Route totals: distance=100, duration=10
+        // Route totals: distance=100, duration=10 (for single segment route 0->1)  
         // Duration tier: 10 -> rate 0.5
         // Service time cost = 30 * 0.5 = 15
         // Waiting time cost = 0 * 0.5 = 0

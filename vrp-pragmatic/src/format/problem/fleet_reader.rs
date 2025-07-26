@@ -4,19 +4,6 @@ mod fleet_reader_test;
 
 use super::*;
 
-/// Converts API TieredCost to core TieredCost.
-fn convert_tiered_cost(api_cost: &model::TieredCost) -> CoreTieredCost {
-    match api_cost {
-        model::TieredCost::Fixed(cost) => CoreTieredCost::fixed(*cost),
-        model::TieredCost::Tiered(tiers) => {
-            let core_tiers = tiers.iter().map(|tier| CoreCostTier {
-                threshold: tier.threshold,
-                cost: tier.cost,
-            }).collect();
-            CoreTieredCost::tiered(core_tiers)
-        }
-    }
-}
 use crate::Location as ApiLocation;
 use crate::format::UnknownLocationFallback;
 use crate::get_unique_locations;
@@ -25,7 +12,7 @@ use std::collections::HashSet;
 use vrp_core::construction::enablers::create_typed_actor_groups;
 use vrp_core::construction::features::{VehicleCapacityDimension, VehicleSkillsDimension};
 use vrp_core::models::common::*;
-use vrp_core::models::problem::{*, TieredCost as CoreTieredCost, CostTier as CoreCostTier, TieredCosts as CoreTieredCosts};
+use vrp_core::models::problem::*;
 
 pub(super) fn get_profile_index_map(api_problem: &ApiProblem) -> HashMap<String, usize> {
     api_problem.fleet.profiles.iter().fold(Default::default(), |mut acc, profile| {
@@ -138,9 +125,9 @@ pub(super) fn read_fleet(api_problem: &ApiProblem, props: &ProblemProperties, co
         // Create tiered costs if needed
         let tiered_costs = if matches!(vehicle.costs.distance, model::TieredCost::Tiered(_)) 
                               || matches!(vehicle.costs.time, model::TieredCost::Tiered(_)) {
-            Some(CoreTieredCosts {
-                per_distance: convert_tiered_cost(&vehicle.costs.distance),
-                per_driving_time: convert_tiered_cost(&vehicle.costs.time),
+            Some(TieredCosts {
+                per_distance: vehicle.costs.distance.clone().into(),
+                per_driving_time: vehicle.costs.time.clone().into(),
             })
         } else {
             None

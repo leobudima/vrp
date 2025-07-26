@@ -8,6 +8,7 @@ use crate::format::{FormatError, Location, MultiFormatError};
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, BufWriter, Error, Read, Write};
 use vrp_core::prelude::Float;
+use vrp_core::models::common::{CostTier as CoreCostTier, TieredCost as CoreTieredCost};
 // region Plan
 
 /// Relation type.
@@ -231,8 +232,8 @@ pub struct Plan {
 
 // region Fleet
 
-/// Represents a cost tier with a threshold and associated cost.
-#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
+/// API wrapper for cost tier with serde support.
+#[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct CostTier {
     /// The threshold value above which this tier applies.
     pub threshold: Float,
@@ -240,32 +241,104 @@ pub struct CostTier {
     pub cost: Float,
 }
 
-/// Represents either a fixed cost or a list of tiered costs.
-#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
+impl<'de> Deserialize<'de> for CostTier {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct CostTierHelper {
+            threshold: Float,
+            cost: Float,
+        }
+
+        let helper = CostTierHelper::deserialize(deserializer)?;
+        
+        // Use core validation
+        CoreCostTier::new(helper.threshold, helper.cost)
+            .map(|core_tier| CostTier {
+                threshold: core_tier.threshold,
+                cost: core_tier.cost,
+            })
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+impl From<CostTier> for CoreCostTier {
+    fn from(api_tier: CostTier) -> Self {
+        CoreCostTier {
+            threshold: api_tier.threshold,
+            cost: api_tier.cost,
+        }
+    }
+}
+
+impl From<CoreCostTier> for CostTier {
+    fn from(core_tier: CoreCostTier) -> Self {
+        CostTier {
+            threshold: core_tier.threshold,
+            cost: core_tier.cost,
+        }
+    }
+}
+
+/// API wrapper for tiered cost with serde support.
+#[derive(Clone, Debug, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum TieredCost {
     /// Fixed cost per unit.
     Fixed(Float),
-    /// List of cost tiers.
+    /// List of cost tiers, sorted by threshold in ascending order.
     Tiered(Vec<CostTier>),
 }
 
 impl TieredCost {
     /// Calculates the cost for a given total value using the appropriate tier.
-    /// For tiered costs, finds the applicable tier based on the total value.
-    /// For fixed costs, returns the fixed rate.
+    /// Delegates to the core implementation.
     pub fn calculate_cost(&self, total_value: Float) -> Float {
+        let core_cost: CoreTieredCost = self.clone().into();
+        core_cost.calculate_rate(total_value)
+    }
+
+    /// Returns true if this is a fixed cost.
+    pub fn is_fixed(&self) -> bool {
+        matches!(self, TieredCost::Fixed(_))
+    }
+
+    /// Returns true if this is a tiered cost.
+    pub fn is_tiered(&self) -> bool {
+        matches!(self, TieredCost::Tiered(_))
+    }
+
+    /// Returns the number of tiers (1 for fixed costs, actual count for tiered costs).
+    pub fn tier_count(&self) -> usize {
         match self {
-            TieredCost::Fixed(cost) => *cost,
+            TieredCost::Fixed(_) => 1,
+            TieredCost::Tiered(tiers) => tiers.len(),
+        }
+    }
+}
+
+impl From<TieredCost> for CoreTieredCost {
+    fn from(api_cost: TieredCost) -> Self {
+        match api_cost {
+            TieredCost::Fixed(cost) => CoreTieredCost::Fixed(cost),
             TieredCost::Tiered(tiers) => {
-                // Find the appropriate tier based on the total value
-                // Tiers should be sorted by threshold in ascending order
-                let applicable_tier = tiers
-                    .iter()
-                    .rev() // Start from highest threshold
-                    .find(|tier| total_value >= tier.threshold);
-                
-                applicable_tier.map(|tier| tier.cost).unwrap_or(0.0)
+                let core_tiers: Vec<CoreCostTier> = tiers.into_iter().map(|t| t.into()).collect();
+                // Use unchecked since API deserialization already validated
+                CoreTieredCost::tiered_unchecked(core_tiers)
+            }
+        }
+    }
+}
+
+impl From<CoreTieredCost> for TieredCost {
+    fn from(core_cost: CoreTieredCost) -> Self {
+        match core_cost {
+            CoreTieredCost::Fixed(cost) => TieredCost::Fixed(cost),
+            CoreTieredCost::Tiered(tiers) => {
+                let api_tiers: Vec<CostTier> = tiers.into_iter().map(|t| t.into()).collect();
+                TieredCost::Tiered(api_tiers)
             }
         }
     }
@@ -276,6 +349,35 @@ impl PartialEq<Float> for TieredCost {
         match self {
             TieredCost::Fixed(cost) => cost == other,
             TieredCost::Tiered(_) => false, // Tiered costs are never equal to a simple float
+        }
+    }
+}
+
+// Custom deserialization using core validation
+impl<'de> serde::Deserialize<'de> for TieredCost {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum TieredCostHelper {
+            Fixed(Float),
+            Tiered(Vec<CostTier>),
+        }
+
+        match TieredCostHelper::deserialize(deserializer)? {
+            TieredCostHelper::Fixed(cost) => {
+                CoreTieredCost::fixed(cost)
+                    .map(|_| TieredCost::Fixed(cost))
+                    .map_err(serde::de::Error::custom)
+            }
+            TieredCostHelper::Tiered(tiers) => {
+                let core_tiers: Vec<CoreCostTier> = tiers.into_iter().map(|t| t.into()).collect();
+                CoreTieredCost::tiered(core_tiers)
+                    .map(|core_cost| core_cost.into())
+                    .map_err(serde::de::Error::custom)
+            }
         }
     }
 }
