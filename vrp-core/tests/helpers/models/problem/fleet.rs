@@ -42,6 +42,7 @@ pub fn test_vehicle(profile_idx: usize) -> Vehicle {
     Vehicle {
         profile: Profile::new(profile_idx, None),
         costs: test_costs(),
+        tiered_costs: None,
         dimens: Default::default(),
         details: vec![test_vehicle_detail()],
     }
@@ -59,7 +60,7 @@ pub fn test_vehicle_with_id(id: &str) -> Vehicle {
     let mut dimens = Dimensions::default();
     dimens.set_vehicle_id(id.to_string());
 
-    Vehicle { profile: Profile::default(), costs: test_costs(), dimens, details: vec![test_vehicle_detail()] }
+    Vehicle { profile: Profile::default(), costs: test_costs(), tiered_costs: None, dimens, details: vec![test_vehicle_detail()] }
 }
 
 pub fn get_vehicle_id(vehicle: &Vehicle) -> &String {

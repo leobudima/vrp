@@ -7,6 +7,7 @@ use crate::format::{FormatError, JobIndex};
 use crate::validation::ValidationContext;
 use crate::{CoordIndex, parse_time};
 use vrp_core::construction::enablers::*;
+use vrp_core::models::problem::CoordinatedCostCalculator;
 use vrp_core::models::Extras;
 use vrp_core::models::common::{TimeOffset, TimeSpan, TimeWindow};
 use vrp_core::solver::processing::{ClusterConfigExtraProperty, ReservedTimesExtraProperty};
@@ -199,7 +200,21 @@ fn get_problem_blocks(
             (environment.logger)(format!("fleet index created in {}ms", duration.as_millis()).as_str());
         },
     )?;
-    let activity: Arc<dyn ActivityCost> = Arc::new(OnlyVehicleActivityCost::default());
+
+    // Check if any vehicles have tiered costs - if so, use CoordinatedCostCalculator
+    let has_tiered_costs = fleet.vehicles.iter().any(|v| v.tiered_costs.is_some());
+    
+    let (transport, activity): (Arc<dyn TransportCost>, Arc<dyn ActivityCost>) = if has_tiered_costs {
+        // Use CoordinatedCostCalculator for both traits to share route totals calculation
+        let coordinated = Arc::new(CoordinatedCostCalculator::new(transport.clone()));
+        
+        // The same coordinated calculator implements both traits
+        (coordinated.clone() as Arc<dyn TransportCost>, coordinated as Arc<dyn ActivityCost>)
+    } else {
+        // Use separate implementations when no tiered costs are present
+        let activity: Arc<dyn ActivityCost> = Arc::new(OnlyVehicleActivityCost::default());
+        (transport, activity)
+    };
 
     let (transport, activity) = if reserved_times_index.is_empty() {
         (transport, activity)

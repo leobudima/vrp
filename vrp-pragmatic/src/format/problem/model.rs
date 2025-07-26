@@ -231,6 +231,55 @@ pub struct Plan {
 
 // region Fleet
 
+/// Represents a cost tier with a threshold and associated cost.
+#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
+pub struct CostTier {
+    /// The threshold value above which this tier applies.
+    pub threshold: Float,
+    /// The cost per unit for this tier.
+    pub cost: Float,
+}
+
+/// Represents either a fixed cost or a list of tiered costs.
+#[derive(Clone, Deserialize, Debug, Serialize, PartialEq)]
+#[serde(untagged)]
+pub enum TieredCost {
+    /// Fixed cost per unit.
+    Fixed(Float),
+    /// List of cost tiers.
+    Tiered(Vec<CostTier>),
+}
+
+impl TieredCost {
+    /// Calculates the cost for a given total value using the appropriate tier.
+    /// For tiered costs, finds the applicable tier based on the total value.
+    /// For fixed costs, returns the fixed rate.
+    pub fn calculate_cost(&self, total_value: Float) -> Float {
+        match self {
+            TieredCost::Fixed(cost) => *cost,
+            TieredCost::Tiered(tiers) => {
+                // Find the appropriate tier based on the total value
+                // Tiers should be sorted by threshold in ascending order
+                let applicable_tier = tiers
+                    .iter()
+                    .rev() // Start from highest threshold
+                    .find(|tier| total_value >= tier.threshold);
+                
+                applicable_tier.map(|tier| tier.cost).unwrap_or(0.0)
+            }
+        }
+    }
+}
+
+impl PartialEq<Float> for TieredCost {
+    fn eq(&self, other: &Float) -> bool {
+        match self {
+            TieredCost::Fixed(cost) => cost == other,
+            TieredCost::Tiered(_) => false, // Tiered costs are never equal to a simple float
+        }
+    }
+}
+
 /// Specifies vehicle costs.
 #[derive(Clone, Deserialize, Debug, Serialize)]
 pub struct VehicleCosts {
@@ -238,11 +287,11 @@ pub struct VehicleCosts {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fixed: Option<Float>,
 
-    /// Cost per distance unit.
-    pub distance: Float,
+    /// Cost per distance unit - can be fixed or tiered.
+    pub distance: TieredCost,
 
-    /// Cost per time unit.
-    pub time: Float,
+    /// Cost per time unit - can be fixed or tiered.
+    pub time: TieredCost,
 }
 
 /// Specifies vehicle shift start.

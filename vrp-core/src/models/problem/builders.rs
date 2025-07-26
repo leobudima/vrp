@@ -201,6 +201,7 @@ impl Default for VehicleBuilder {
                 per_waiting_time: 0.0,
                 per_service_time: 0.0,
             },
+            tiered_costs: None,
             dimens: Default::default(),
             details: vec![],
         })

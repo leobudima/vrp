@@ -181,3 +181,196 @@ mod objective {
         assert_eq!(result, expected);
     }
 }
+
+mod tiered_costs {
+    use crate::helpers::models::problem::*;
+    use crate::models::common::*;
+    use crate::models::problem::*;
+    use crate::models::solution::{Activity, Route, Tour, Place as SolutionPlace};
+    use std::sync::Arc;
+
+    fn create_test_tiered_costs() -> TieredCosts {
+        TieredCosts {
+            per_distance: TieredCost::tiered(vec![
+                CostTier { threshold: 0.0, cost: 1.0 },
+                CostTier { threshold: 100.0, cost: 2.0 },
+                CostTier { threshold: 200.0, cost: 3.0 },
+            ]),
+            per_driving_time: TieredCost::tiered(vec![
+                CostTier { threshold: 0.0, cost: 0.5 },
+                CostTier { threshold: 50.0, cost: 1.0 },
+                CostTier { threshold: 100.0, cost: 1.5 },
+            ]),
+        }
+    }
+
+    fn create_test_transport_cost() -> Arc<dyn TransportCost> {
+        Arc::new(SimpleTransportCost::new(
+            vec![0., 10., 20., 10., 0., 30., 20., 30., 0.], // durations
+            vec![0., 100., 200., 100., 0., 300., 200., 300., 0.], // distances
+        ).unwrap())
+    }
+
+    fn create_test_vehicle_with_tiered_costs() -> Vehicle {
+        Vehicle {
+            profile: Profile::default(),
+            costs: test_costs(),
+            tiered_costs: Some(create_test_tiered_costs()),
+            dimens: Default::default(),
+            details: vec![test_vehicle_detail()],
+        }
+    }
+
+    #[test]
+    fn test_tiered_cost_tier_selection() {
+        let distance_cost = TieredCost::tiered(vec![
+            CostTier { threshold: 0.0, cost: 1.0 },
+            CostTier { threshold: 100.0, cost: 2.0 },
+            CostTier { threshold: 200.0, cost: 3.0 },
+        ]);
+
+        // Test tier boundaries
+        assert_eq!(distance_cost.calculate_rate(0.0), 1.0);
+        assert_eq!(distance_cost.calculate_rate(50.0), 1.0);
+        assert_eq!(distance_cost.calculate_rate(99.9), 1.0);
+        assert_eq!(distance_cost.calculate_rate(100.0), 2.0);
+        assert_eq!(distance_cost.calculate_rate(150.0), 2.0);
+        assert_eq!(distance_cost.calculate_rate(199.9), 2.0);
+        assert_eq!(distance_cost.calculate_rate(200.0), 3.0);
+        assert_eq!(distance_cost.calculate_rate(500.0), 3.0);
+    }
+
+    #[test]
+    fn test_coordinated_cost_calculator_shares_route_totals() {
+        let transport_cost = create_test_transport_cost();
+        let calculator = CoordinatedCostCalculator::new(transport_cost.clone());
+        
+        // Create a test route with activities
+        let vehicle = Arc::new(create_test_vehicle_with_tiered_costs());
+        let driver = Arc::new(test_driver());
+        let actor = Arc::new(Actor {
+            vehicle: vehicle.clone(),
+            driver: driver.clone(),
+            detail: ActorDetail {
+                start: Some(VehiclePlace { location: 0, time: TimeInterval { earliest: Some(0.), latest: None } }),
+                end: Some(VehiclePlace { location: 0, time: TimeInterval { earliest: None, latest: Some(1000.) } }),
+                time: TimeWindow { start: 0., end: 1000. },
+            },
+        });
+        
+        let mut tour = Tour::new(&actor);
+        
+        // Add activities at different locations - use helper to create proper activities
+        let job1 = Arc::new(test_single_job());
+        let job2 = Arc::new(test_single_job());
+        
+        let activity1 = Activity {
+            place: SolutionPlace { idx: 0, location: 1, duration: 10., time: TimeWindow::new(0., 1000.) },
+            schedule: crate::models::common::Schedule { arrival: 10., departure: 20. },
+            job: Some(job1),
+            commute: None,
+        };
+        
+        let activity2 = Activity {
+            place: SolutionPlace { idx: 1, location: 2, duration: 20., time: TimeWindow::new(0., 1000.) },
+            schedule: crate::models::common::Schedule { arrival: 50., departure: 70. },
+            job: Some(job2),
+            commute: None,
+        };
+        
+        tour.insert_at(activity1, 1);
+        tour.insert_at(activity2, 2);
+        
+        let route = Route { actor, tour };
+        
+        // Both transport and activity costs should use the same route totals
+        let route_totals_1 = calculator.get_route_totals(&route);
+        let route_totals_2 = calculator.calculate_route_totals(&route);
+        
+        assert_eq!(route_totals_1, route_totals_2);
+        
+        // Verify route totals are calculated correctly
+        // Route: 0 -> 1 -> 2, so distances: 100 + 300 = 400, durations: 10 + 30 = 40
+        assert_eq!(route_totals_1.0, 400.0); // total distance
+        assert_eq!(route_totals_1.1, 40.0);  // total duration
+    }
+
+    #[test]
+    fn test_transport_cost_with_tiered_costs() {
+        let transport_cost = create_test_transport_cost();
+        let calculator = CoordinatedCostCalculator::new(transport_cost.clone());
+        
+        let vehicle = Arc::new(create_test_vehicle_with_tiered_costs());
+        let driver = Arc::new(test_driver());
+        let actor = Arc::new(Actor {
+            vehicle: vehicle.clone(),
+            driver: driver.clone(),
+            detail: ActorDetail {
+                start: Some(VehiclePlace { location: 0, time: TimeInterval { earliest: Some(0.), latest: None } }),
+                end: Some(VehiclePlace { location: 0, time: TimeInterval { earliest: None, latest: Some(1000.) } }),
+                time: TimeWindow { start: 0., end: 1000. },
+            },
+        });
+        
+        let mut tour = Tour::new(&actor);
+        let job = Arc::new(test_single_job());
+        tour.insert_at(Activity {
+            place: SolutionPlace { idx: 0, location: 1, duration: 10., time: TimeWindow::new(0., 1000.) },
+            schedule: crate::models::common::Schedule { arrival: 10., departure: 20. },
+            job: Some(job),
+            commute: None,
+        }, 1);
+        
+        let route = Route { actor, tour };
+        
+        // Calculate transport cost between locations 0 and 1
+        let cost = TransportCost::cost(&calculator, &route, 0, 1, TravelTime::Departure(0.));
+        
+        // Route totals: distance=100, duration=10
+        // Distance tier: 100 -> rate 2.0, so distance cost = 100 * 2.0 = 200
+        // Duration tier: 10 -> rate 0.5, so duration cost = 10 * 0.5 = 5
+        // Expected total: 200 + 5 = 205
+        assert_eq!(cost, 205.0);
+    }
+
+    #[test]
+    fn test_activity_cost_with_tiered_costs() {
+        let transport_cost = create_test_transport_cost();
+        let calculator = CoordinatedCostCalculator::new(transport_cost.clone());
+        
+        let vehicle = Arc::new(create_test_vehicle_with_tiered_costs());
+        let driver = Arc::new(test_driver());
+        let actor = Arc::new(Actor {
+            vehicle: vehicle.clone(),
+            driver: driver.clone(),
+            detail: ActorDetail {
+                start: Some(VehiclePlace { location: 0, time: TimeInterval { earliest: Some(0.), latest: None } }),
+                end: Some(VehiclePlace { location: 0, time: TimeInterval { earliest: None, latest: Some(1000.) } }),
+                time: TimeWindow { start: 0., end: 1000. },
+            },
+        });
+        
+        let mut tour = Tour::new(&actor);
+        let job = Arc::new(test_single_job());
+        let activity = Activity {
+            place: SolutionPlace { idx: 0, location: 1, duration: 30., time: TimeWindow::new(0., 1000.) },
+            schedule: crate::models::common::Schedule { arrival: 10., departure: 40. },
+            job: Some(job),
+            commute: None,
+        };
+        tour.insert_at(activity, 1);
+        
+        let route = Route { actor, tour };
+        
+        // Calculate activity cost (no waiting time, just service time)
+        let activity_ref = route.tour.get(1).unwrap();
+        let cost = ActivityCost::cost(&calculator, &route, activity_ref, 10.); // arrival = 10, start = 0, no waiting
+        
+        // Route totals: distance=100, duration=10
+        // Duration tier: 10 -> rate 0.5
+        // Service time cost = 30 * 0.5 = 15
+        // Waiting time cost = 0 * 0.5 = 0
+        // Expected total: 15 + 0 = 15
+        assert_eq!(cost, 15.0);
+    }
+}

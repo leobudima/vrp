@@ -61,6 +61,7 @@ pub(crate) fn create_fleet_with_distance_costs(
                 per_waiting_time: 0.0,
                 per_service_time: 0.0,
             },
+            tiered_costs: None,
             dimens: Default::default(),
             details: Default::default(),
         })],
@@ -79,6 +80,7 @@ pub(crate) fn create_fleet_with_distance_costs(
                         per_waiting_time: 0.0,
                         per_service_time: 0.0,
                     },
+                    tiered_costs: None,
                     dimens,
                     details: vec![VehicleDetail {
                         start: Some(VehiclePlace {

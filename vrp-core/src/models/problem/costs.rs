@@ -22,14 +22,67 @@ pub enum TravelTime {
 pub trait ActivityCost: Send + Sync {
     /// Returns cost to perform activity.
     fn cost(&self, route: &Route, activity: &Activity, arrival: Timestamp) -> Cost {
+        self.cost_with_route_totals(route, activity, arrival, None)
+    }
+
+    /// Returns cost to perform activity with optional pre-calculated route totals.
+    /// If route_totals is None, will calculate them internally.
+    fn cost_with_route_totals(
+        &self, 
+        route: &Route, 
+        activity: &Activity, 
+        arrival: Timestamp,
+        route_totals: Option<(Distance, Duration)>
+    ) -> Cost {
         let actor = route.actor.as_ref();
 
         let waiting = if activity.place.time.start > arrival { activity.place.time.start - arrival } else { 0. };
         let service = activity.place.duration;
 
-        waiting * (actor.driver.costs.per_waiting_time + actor.vehicle.costs.per_waiting_time)
-            + service * (actor.driver.costs.per_service_time + actor.vehicle.costs.per_service_time)
+        // Check if tiered costs are available for time-based calculations
+        let (driver_service_rate, vehicle_service_rate, driver_waiting_rate, vehicle_waiting_rate) = 
+            if actor.driver.tiered_costs.is_some() || actor.vehicle.tiered_costs.is_some() {
+                // Use provided route totals or calculate them
+                let (_, total_duration) = route_totals.unwrap_or_else(|| self.calculate_route_totals(route));
+
+                let driver_service_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.driver.costs.per_service_time);
+                    
+                let vehicle_service_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.vehicle.costs.per_service_time);
+                    
+                let driver_waiting_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.driver.costs.per_waiting_time);
+                    
+                let vehicle_waiting_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.vehicle.costs.per_waiting_time);
+                    
+                (driver_service_rate, vehicle_service_rate, driver_waiting_rate, vehicle_waiting_rate)
+            } else {
+                // Use fixed costs
+                (actor.driver.costs.per_service_time, actor.vehicle.costs.per_service_time,
+                 actor.driver.costs.per_waiting_time, actor.vehicle.costs.per_waiting_time)
+            };
+
+        waiting * (driver_waiting_rate + vehicle_waiting_rate)
+            + service * (driver_service_rate + vehicle_service_rate)
     }
+
+    /// Calculates route totals for tiered cost evaluation.
+    /// Default implementation should be overridden by implementations that have access to transport data.
+    fn calculate_route_totals(&self, _route: &Route) -> (Distance, Duration) {
+        // Default implementation returns zeros - this should be overridden
+        (0.0, 0.0)
+    }
+
 
     /// Estimates departure time for activity and actor at given arrival time.
     fn estimate_departure(&self, route: &Route, activity: &Activity, arrival: Timestamp) -> Timestamp;
@@ -52,6 +105,56 @@ impl ActivityCost for SimpleActivityCost {
     }
 }
 
+/// A coordinated cost calculator that implements both ActivityCost and TransportCost traits
+/// and shares route totals calculation between them for consistent tiered cost evaluation.
+pub struct CoordinatedCostCalculator {
+    transport_cost: Arc<dyn TransportCost>,
+}
+
+impl CoordinatedCostCalculator {
+    /// Creates a new coordinated cost calculator.
+    pub fn new(transport_cost: Arc<dyn TransportCost>) -> Self {
+        Self { transport_cost }
+    }
+}
+
+impl ActivityCost for CoordinatedCostCalculator {
+    fn calculate_route_totals(&self, route: &Route) -> (Distance, Duration) {
+        // Use the same route totals calculation as TransportCost
+        self.transport_cost.get_route_totals(route)
+    }
+
+    fn estimate_departure(&self, _route: &Route, activity: &Activity, arrival: Timestamp) -> Timestamp {
+        arrival.max(activity.place.time.start) + activity.place.duration
+    }
+
+    fn estimate_arrival(&self, _route: &Route, activity: &Activity, departure: Timestamp) -> Timestamp {
+        activity.place.time.end.min(departure - activity.place.duration)
+    }
+}
+
+impl TransportCost for CoordinatedCostCalculator {
+    fn duration_approx(&self, profile: &Profile, from: Location, to: Location) -> Duration {
+        self.transport_cost.duration_approx(profile, from, to)
+    }
+
+    fn distance_approx(&self, profile: &Profile, from: Location, to: Location) -> Distance {
+        self.transport_cost.distance_approx(profile, from, to)
+    }
+
+    fn duration(&self, route: &Route, from: Location, to: Location, travel_time: TravelTime) -> Duration {
+        self.transport_cost.duration(route, from, to, travel_time)
+    }
+
+    fn distance(&self, route: &Route, from: Location, to: Location, travel_time: TravelTime) -> Distance {
+        self.transport_cost.distance(route, from, to, travel_time)
+    }
+
+    fn size(&self) -> usize {
+        self.transport_cost.size()
+    }
+}
+
 /// Provides the way to get routing information for specific locations and actor.
 pub trait TransportCost: Send + Sync {
     /// Returns time-dependent transport cost between two locations for given actor.
@@ -61,8 +164,58 @@ pub trait TransportCost: Send + Sync {
         let distance = self.distance(route, from, to, travel_time);
         let duration = self.duration(route, from, to, travel_time);
 
-        distance * (actor.driver.costs.per_distance + actor.vehicle.costs.per_distance)
-            + duration * (actor.driver.costs.per_driving_time + actor.vehicle.costs.per_driving_time)
+        // Check if tiered costs are available, otherwise use fixed costs
+        let (driver_distance_rate, vehicle_distance_rate, driver_time_rate, vehicle_time_rate) = 
+            if actor.driver.tiered_costs.is_some() || actor.vehicle.tiered_costs.is_some() {
+                // Calculate route totals for tiered cost evaluation
+                let (total_distance, total_duration) = self.get_route_totals(route);
+
+                let driver_distance_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_distance.calculate_rate(total_distance))
+                    .unwrap_or(actor.driver.costs.per_distance);
+                    
+                let vehicle_distance_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_distance.calculate_rate(total_distance))
+                    .unwrap_or(actor.vehicle.costs.per_distance);
+                    
+                let driver_time_rate = actor.driver.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.driver.costs.per_driving_time);
+                    
+                let vehicle_time_rate = actor.vehicle.tiered_costs
+                    .as_ref()
+                    .map(|tc| tc.per_driving_time.calculate_rate(total_duration))
+                    .unwrap_or(actor.vehicle.costs.per_driving_time);
+                    
+                (driver_distance_rate, vehicle_distance_rate, driver_time_rate, vehicle_time_rate)
+            } else {
+                // Use fixed costs
+                (actor.driver.costs.per_distance, actor.vehicle.costs.per_distance,
+                 actor.driver.costs.per_driving_time, actor.vehicle.costs.per_driving_time)
+            };
+
+        distance * (driver_distance_rate + vehicle_distance_rate)
+            + duration * (driver_time_rate + vehicle_time_rate)
+    }
+
+    /// Gets the total distance and duration for the entire route.
+    /// Default implementation calculates from all tour activities.
+    fn get_route_totals(&self, route: &Route) -> (Distance, Duration) {
+        let mut total_distance = 0.0;
+        let mut total_duration = 0.0;
+
+        let activities = &route.tour.all_activities().collect::<Vec<_>>();
+        for window in activities.windows(2) {
+            if let [from_activity, to_activity] = window {
+                total_distance += self.distance_approx(&route.actor.vehicle.profile, from_activity.place.location, to_activity.place.location);
+                total_duration += self.duration_approx(&route.actor.vehicle.profile, from_activity.place.location, to_activity.place.location);
+            }
+        }
+
+        (total_distance, total_duration)
     }
 
     /// Returns time-independent travel duration between locations specific for given profile.

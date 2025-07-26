@@ -3,6 +3,20 @@
 mod fleet_reader_test;
 
 use super::*;
+
+/// Converts API TieredCost to core TieredCost.
+fn convert_tiered_cost(api_cost: &model::TieredCost) -> CoreTieredCost {
+    match api_cost {
+        model::TieredCost::Fixed(cost) => CoreTieredCost::fixed(*cost),
+        model::TieredCost::Tiered(tiers) => {
+            let core_tiers = tiers.iter().map(|tier| CoreCostTier {
+                threshold: tier.threshold,
+                cost: tier.cost,
+            }).collect();
+            CoreTieredCost::tiered(core_tiers)
+        }
+    }
+}
 use crate::Location as ApiLocation;
 use crate::format::UnknownLocationFallback;
 use crate::get_unique_locations;
@@ -11,7 +25,7 @@ use std::collections::HashSet;
 use vrp_core::construction::enablers::create_typed_actor_groups;
 use vrp_core::construction::features::{VehicleCapacityDimension, VehicleSkillsDimension};
 use vrp_core::models::common::*;
-use vrp_core::models::problem::*;
+use vrp_core::models::problem::{*, TieredCost as CoreTieredCost, CostTier as CoreCostTier, TieredCosts as CoreTieredCosts};
 
 pub(super) fn get_profile_index_map(api_problem: &ApiProblem) -> HashMap<String, usize> {
     api_problem.fleet.profiles.iter().fold(Default::default(), |mut acc, profile| {
@@ -102,10 +116,34 @@ pub(super) fn read_fleet(api_problem: &ApiProblem, props: &ProblemProperties, co
     api_problem.fleet.vehicles.iter().for_each(|vehicle| {
         let costs = Costs {
             fixed: vehicle.costs.fixed.unwrap_or(0.),
-            per_distance: vehicle.costs.distance,
-            per_driving_time: vehicle.costs.time,
-            per_waiting_time: vehicle.costs.time,
-            per_service_time: vehicle.costs.time,
+            per_distance: match &vehicle.costs.distance {
+                model::TieredCost::Fixed(cost) => *cost,
+                model::TieredCost::Tiered(tiers) => tiers.first().map(|t| t.cost).unwrap_or(0.0),
+            },
+            per_driving_time: match &vehicle.costs.time {
+                model::TieredCost::Fixed(cost) => *cost,
+                model::TieredCost::Tiered(tiers) => tiers.first().map(|t| t.cost).unwrap_or(0.0),
+            },
+            // For tiered costs, these values are unused since CoordinatedCostCalculator handles the calculation
+            per_waiting_time: match &vehicle.costs.time {
+                model::TieredCost::Fixed(cost) => *cost,
+                model::TieredCost::Tiered(tiers) => tiers.first().map(|t| t.cost).unwrap_or(0.0),
+            },
+            per_service_time: match &vehicle.costs.time {
+                model::TieredCost::Fixed(cost) => *cost,
+                model::TieredCost::Tiered(tiers) => tiers.first().map(|t| t.cost).unwrap_or(0.0),
+            },
+        };
+
+        // Create tiered costs if needed
+        let tiered_costs = if matches!(vehicle.costs.distance, model::TieredCost::Tiered(_)) 
+                              || matches!(vehicle.costs.time, model::TieredCost::Tiered(_)) {
+            Some(CoreTieredCosts {
+                per_distance: convert_tiered_cost(&vehicle.costs.distance),
+                per_driving_time: convert_tiered_cost(&vehicle.costs.time),
+            })
+        } else {
+            None
         };
 
         let index = *profile_indices.get(&vehicle.profile.matrix).unwrap();
@@ -163,6 +201,7 @@ pub(super) fn read_fleet(api_problem: &ApiProblem, props: &ProblemProperties, co
                 vehicles.push(Arc::new(Vehicle {
                     profile: profile.clone(),
                     costs: costs.clone(),
+                    tiered_costs: tiered_costs.clone(),
                     dimens,
                     details: details.clone(),
                 }));
@@ -178,6 +217,7 @@ pub(super) fn read_fleet(api_problem: &ApiProblem, props: &ProblemProperties, co
             per_waiting_time: 0.0,
             per_service_time: 0.0,
         },
+        tiered_costs: None,
         dimens: Default::default(),
         details: vec![],
     })];

@@ -14,7 +14,7 @@ pub const DEFAULT_ACTIVITY_TIME_WINDOW: TimeWindow = TimeWindow { start: 0., end
 pub const DEFAULT_ACTIVITY_SCHEDULE: Schedule = Schedule { departure: 0.0, arrival: 0.0 };
 
 pub fn test_driver() -> Driver {
-    Driver { costs: DEFAULT_VEHICLE_COSTS, dimens: Default::default(), details: vec![] }
+    Driver { costs: DEFAULT_VEHICLE_COSTS, tiered_costs: None, dimens: Default::default(), details: vec![] }
 }
 
 pub fn test_vehicle(id: &str) -> Vehicle {
@@ -28,6 +28,7 @@ fn test_vehicle_impl(id: &str, has_open_end: bool) -> Vehicle {
     Vehicle {
         profile: Profile::default(),
         costs: DEFAULT_VEHICLE_COSTS,
+        tiered_costs: None,
         dimens,
         details: vec![VehicleDetail {
             start: Some(VehiclePlace { location: 0, time: Default::default() }),

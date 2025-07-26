@@ -64,3 +64,111 @@ fn can_deserialize_matrix() {
     assert_eq!(matrix.distances.len(), 16);
     assert_eq!(matrix.travel_times.len(), 16);
 }
+
+mod tiered_costs {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn can_deserialize_fixed_cost_format() {
+        let json_data = json!({
+            "fixed": 100,
+            "distance": 1.5,
+            "time": 2.0
+        });
+
+        let costs: VehicleCosts = serde_json::from_value(json_data).expect("Should deserialize fixed costs");
+        
+        assert_eq!(costs.fixed, Some(100.0));
+        assert_eq!(costs.distance, TieredCost::Fixed(1.5));
+        assert_eq!(costs.time, TieredCost::Fixed(2.0));
+    }
+
+    #[test]
+    fn can_deserialize_tiered_cost_format() {
+        let json_data = json!({
+            "fixed": 50,
+            "distance": [
+                {"threshold": 0, "cost": 1.0},
+                {"threshold": 100, "cost": 2.0},
+                {"threshold": 200, "cost": 3.0}
+            ],
+            "time": [
+                {"threshold": 0, "cost": 0.5},
+                {"threshold": 60, "cost": 1.0}
+            ]
+        });
+
+        let costs: VehicleCosts = serde_json::from_value(json_data).expect("Should deserialize tiered costs");
+        
+        assert_eq!(costs.fixed, Some(50.0));
+        
+        match costs.distance {
+            TieredCost::Tiered(tiers) => {
+                assert_eq!(tiers.len(), 3);
+                assert_eq!(tiers[0].threshold, 0.0);
+                assert_eq!(tiers[0].cost, 1.0);
+                assert_eq!(tiers[2].threshold, 200.0);
+                assert_eq!(tiers[2].cost, 3.0);
+            }
+            _ => panic!("Expected tiered cost for distance"),
+        }
+        
+        match costs.time {
+            TieredCost::Tiered(tiers) => {
+                assert_eq!(tiers.len(), 2);
+                assert_eq!(tiers[1].threshold, 60.0);
+                assert_eq!(tiers[1].cost, 1.0);
+            }
+            _ => panic!("Expected tiered cost for time"),
+        }
+    }
+
+    #[test]
+    fn can_calculate_tiered_cost_rates() {
+        let distance_cost = TieredCost::Tiered(vec![
+            CostTier { threshold: 0.0, cost: 1.0 },
+            CostTier { threshold: 50.0, cost: 1.5 },
+            CostTier { threshold: 100.0, cost: 2.0 },
+        ]);
+
+        // Test rate calculation for different total values
+        assert_eq!(distance_cost.calculate_cost(0.0), 1.0);
+        assert_eq!(distance_cost.calculate_cost(25.0), 1.0);
+        assert_eq!(distance_cost.calculate_cost(49.9), 1.0);
+        assert_eq!(distance_cost.calculate_cost(50.0), 1.5);
+        assert_eq!(distance_cost.calculate_cost(75.0), 1.5);
+        assert_eq!(distance_cost.calculate_cost(99.9), 1.5);
+        assert_eq!(distance_cost.calculate_cost(100.0), 2.0);
+        assert_eq!(distance_cost.calculate_cost(150.0), 2.0);
+    }
+
+    #[test]
+    fn can_serialize_and_deserialize_roundtrip() {
+        let original_costs = VehicleCosts {
+            fixed: Some(100.0),
+            distance: TieredCost::Tiered(vec![
+                CostTier { threshold: 0.0, cost: 1.0 },
+                CostTier { threshold: 100.0, cost: 2.0 },
+            ]),
+            time: TieredCost::Fixed(1.5),
+        };
+
+        let json_value = serde_json::to_value(&original_costs).expect("Should serialize");
+        let deserialized_costs: VehicleCosts = serde_json::from_value(json_value).expect("Should deserialize");
+        
+        assert_eq!(deserialized_costs.fixed, original_costs.fixed);
+        assert_eq!(deserialized_costs.time, original_costs.time);
+        
+        match (&deserialized_costs.distance, &original_costs.distance) {
+            (TieredCost::Tiered(d_tiers), TieredCost::Tiered(o_tiers)) => {
+                assert_eq!(d_tiers.len(), o_tiers.len());
+                for (d_tier, o_tier) in d_tiers.iter().zip(o_tiers.iter()) {
+                    assert_eq!(d_tier.threshold, o_tier.threshold);
+                    assert_eq!(d_tier.cost, o_tier.cost);
+                }
+            }
+            _ => panic!("Distance cost types should match"),
+        }
+    }
+}
