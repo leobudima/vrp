@@ -50,72 +50,6 @@ fn can_calculate_exact_tiered_costs() {
     println!("Tiered cost solution cost: {}", solution.statistic.cost);
 }
 
-/// Test backward compatibility with fixed costs
-#[test]
-fn can_maintain_backward_compatibility_with_fixed_costs() {
-    let fixed_cost_problem = Problem {
-        plan: Plan {
-            jobs: vec![create_delivery_job("job1", (1., 1.))],
-            ..create_empty_plan()
-        },
-        fleet: Fleet {
-            vehicles: vec![VehicleType {
-                type_id: "fixed_vehicle".to_string(),
-                vehicle_ids: vec!["vehicle_1".to_string()],
-                profile: create_default_vehicle_profile(),
-                costs: VehicleCosts {
-                    fixed: Some(50.),
-                    distance: TieredCost::Fixed(1.5),
-                    time: TieredCost::Fixed(2.0),
-                },
-                shifts: vec![create_default_vehicle_shift()],
-                capacity: vec![10],
-                ..create_default_vehicle_type()
-            }],
-            profiles: create_default_matrix_profiles(),
-            ..create_default_fleet()
-        },
-        ..create_empty_problem()
-    };
-
-    let tiered_equivalent_problem = Problem {
-        plan: Plan {
-            jobs: vec![create_delivery_job("job1", (1., 1.))],
-            ..create_empty_plan()
-        },
-        fleet: Fleet {
-            vehicles: vec![VehicleType {
-                type_id: "tiered_vehicle".to_string(),
-                vehicle_ids: vec!["vehicle_1".to_string()],
-                profile: create_default_vehicle_profile(),
-                costs: VehicleCosts {
-                    fixed: Some(50.),
-                    distance: TieredCost::Tiered(vec![CostTier { threshold: 0., cost: 1.5 }]),
-                    time: TieredCost::Tiered(vec![CostTier { threshold: 0., cost: 2.0 }]),
-                },
-                shifts: vec![create_default_vehicle_shift()],
-                capacity: vec![10],
-                ..create_default_vehicle_type()
-            }],
-            profiles: create_default_matrix_profiles(),
-            ..create_default_fleet()
-        },
-        ..create_empty_problem()
-    };
-
-    let fixed_solution = solve_with_cheapest_insertion(fixed_cost_problem, None);
-    let tiered_solution = solve_with_cheapest_insertion(tiered_equivalent_problem, None);
-    
-    // Both solutions should have the same cost structure
-    // Note: Exact costs may vary due to different optimization paths, but structure should be similar
-    println!("Fixed cost solution: {}", fixed_solution.statistic.cost);
-    println!("Tiered equivalent solution: {}", tiered_solution.statistic.cost);
-    
-    // Test passes if both solutions complete without crashing
-    assert!(fixed_solution.statistic.cost >= 0.);
-    assert!(tiered_solution.statistic.cost >= 0.);
-}
-
 /// Test mixed fleet with both fixed and tiered cost vehicles
 #[test]
 fn can_handle_mixed_fleet_with_fixed_and_tiered_costs() {
@@ -254,4 +188,66 @@ fn can_handle_tier_boundaries_correctly() {
     // Should handle complex tier structures
     assert!(solution.statistic.cost >= 0.);
     println!("Complex tier structure solution cost: {}", solution.statistic.cost);
+}
+
+/// Test that a single-tier cost setup is equivalent to a fixed cost setup.
+#[test]
+fn can_match_fixed_and_tiered_costs() {
+    let plan = Plan {
+        jobs: vec![
+            create_delivery_job("job1", (1., 1.)),
+            create_delivery_job("job2", (2., 2.)),
+        ],
+        ..create_empty_plan()
+    };
+
+    let fixed_cost_problem = Problem {
+        plan: plan.clone(),
+        fleet: Fleet {
+            vehicles: vec![VehicleType {
+                type_id: "fixed_vehicle".to_string(),
+                vehicle_ids: vec!["vehicle_1".to_string()],
+                profile: create_default_vehicle_profile(),
+                costs: VehicleCosts {
+                    fixed: Some(50.),
+                    distance: TieredCost::Fixed(1.5),
+                    time: TieredCost::Fixed(2.0),
+                },
+                shifts: vec![create_default_vehicle_shift()],
+                capacity: vec![10],
+                ..create_default_vehicle_type()
+            }],
+            profiles: create_default_matrix_profiles(),
+            ..create_default_fleet()
+        },
+        ..create_empty_problem()
+    };
+
+    let tiered_equivalent_problem = Problem {
+        plan: plan.clone(),
+        fleet: Fleet {
+            vehicles: vec![VehicleType {
+                type_id: "tiered_vehicle".to_string(),
+                vehicle_ids: vec!["vehicle_1".to_string()],
+                profile: create_default_vehicle_profile(),
+                costs: VehicleCosts {
+                    fixed: Some(50.),
+                    distance: TieredCost::Tiered(vec![CostTier { threshold: 0., cost: 1.5 }]),
+                    time: TieredCost::Tiered(vec![CostTier { threshold: 0., cost: 2.0 }]),
+                },
+                shifts: vec![create_default_vehicle_shift()],
+                capacity: vec![10],
+                ..create_default_vehicle_type()
+            }],
+            profiles: create_default_matrix_profiles(),
+            ..create_default_fleet()
+        },
+        ..create_empty_problem()
+    };
+
+    let fixed_solution = solve_with_cheapest_insertion(fixed_cost_problem, None);
+    let tiered_solution = solve_with_cheapest_insertion(tiered_equivalent_problem, None);
+
+    assert_eq!(fixed_solution.statistic.cost, tiered_solution.statistic.cost);
+    assert_eq!(fixed_solution.tours, tiered_solution.tours);
 }

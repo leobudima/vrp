@@ -300,8 +300,9 @@ mod tiered_costs {
     fn test_transport_cost_with_tiered_costs() {
         let transport_cost = create_test_transport_cost();
         let calculator = CoordinatedCostCalculator::new(transport_cost.clone());
-        
+
         let vehicle = Arc::new(create_test_vehicle_with_tiered_costs());
+        // NOTE: driver costs are from `test_driver` which uses `DEFAULT_VEHICLE_COSTS`
         let driver = Arc::new(test_driver());
         let actor = Arc::new(Actor {
             vehicle: vehicle.clone(),
@@ -312,34 +313,38 @@ mod tiered_costs {
                 time: TimeWindow { start: 0., end: 1000. },
             },
         });
-        
+
         let mut tour = Tour::new(&actor);
         let job = TestSingleBuilder::default().build_shared();
-        tour.insert_at(Activity {
-            place: SolutionPlace { idx: 0, location: 1, duration: 10., time: TimeWindow::new(0., 1000.) },
-            schedule: crate::models::common::Schedule { arrival: 10., departure: 20. },
-            job: Some(job),
-            commute: None,
-        }, 1);
-        
+        tour.insert_at(
+            Activity {
+                place: SolutionPlace { idx: 0, location: 1, duration: 10., time: TimeWindow::new(0., 1000.) },
+                schedule: crate::models::common::Schedule { arrival: 10., departure: 20. },
+                job: Some(job),
+                commute: None,
+            },
+            1,
+        );
+
         let route = Route { actor, tour };
-        
+
         // Calculate transport cost between locations 0 and 1
         let cost = TransportCost::cost(&calculator, &route, 0, 1, TravelTime::Departure(0.));
-        
-        // Route totals: distance=100, duration=10 (for single segment route 0->1)
-        // Distance tier: 100 -> rate 2.0, so distance cost = 100 * 2.0 = 200
-        // Duration tier: 10 -> rate 0.5, so duration cost = 10 * 0.5 = 5
-        // Expected total: 200 + 5 = 205
-        assert_eq!(cost, 205.0);
+
+        // Route totals for 0->1->0: distance=200, duration=20
+        // Vehicle distance tier for total 200: rate 3.0. Driver distance rate: 1.0. Total rate: 4.0
+        // Vehicle duration tier for total 20: rate 0.5. Driver duration rate: 1.0. Total rate: 1.5
+        // Leg 0->1 cost: distance (100) * 4.0 + duration (10) * 1.5 = 400 + 15 = 415
+        assert_eq!(cost, 415.0);
     }
 
     #[test]
     fn test_activity_cost_with_tiered_costs() {
         let transport_cost = create_test_transport_cost();
         let calculator = CoordinatedCostCalculator::new(transport_cost.clone());
-        
+
         let vehicle = Arc::new(create_test_vehicle_with_tiered_costs());
+        // NOTE: driver costs are from `test_driver` which uses `DEFAULT_VEHICLE_COSTS`
         let driver = Arc::new(test_driver());
         let actor = Arc::new(Actor {
             vehicle: vehicle.clone(),
@@ -350,7 +355,7 @@ mod tiered_costs {
                 time: TimeWindow { start: 0., end: 1000. },
             },
         });
-        
+
         let mut tour = Tour::new(&actor);
         let job = TestSingleBuilder::default().build_shared();
         let activity = Activity {
@@ -360,18 +365,18 @@ mod tiered_costs {
             commute: None,
         };
         tour.insert_at(activity, 1);
-        
+
         let route = Route { actor, tour };
-        
+
         // Calculate activity cost (no waiting time, just service time)
         let activity_ref = route.tour.get(1).unwrap();
         let cost = ActivityCost::cost(&calculator, &route, activity_ref, 10.); // arrival = 10, start = 0, no waiting
-        
-        // Route totals: distance=100, duration=10 (for single segment route 0->1)  
-        // Duration tier: 10 -> rate 0.5
-        // Service time cost = 30 * 0.5 = 15
-        // Waiting time cost = 0 * 0.5 = 0
-        // Expected total: 15 + 0 = 15
-        assert_eq!(cost, 15.0);
+
+        // Route totals for 0->1->0: distance=200, duration=20
+        // Vehicle duration tier for total 20: rate 0.5. Driver duration rate: 1.0. Total rate: 1.5
+        // Service time cost = 30 * 1.5 = 45
+        // Waiting time cost = 0 * 1.5 = 0
+        // Expected total: 45 + 0 = 45
+        assert_eq!(cost, 45.0);
     }
 }

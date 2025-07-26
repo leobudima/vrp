@@ -1,4 +1,4 @@
-use crate::format::problem::*;
+use crate::format::problem::{*, model::TieredCost};
 use crate::helpers::*;
 use std::collections::HashSet;
 use std::iter::FromIterator;
