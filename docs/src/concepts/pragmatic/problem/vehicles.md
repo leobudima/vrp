@@ -19,11 +19,49 @@ A vehicle types are defined by `fleet.vehicles` property and their schema has th
 {{#include ../../../../../examples/data/pragmatic/simple.basic.problem.json:104:106}}
 ```
 
-- **costs** (required): specifies how expensive is vehicle usage. It has three properties:
+- **costs** (required): specifies how expensive is vehicle usage. It has the following properties:
                                      
     - **fixed**: a fixed cost per vehicle tour
-    - **time**: a cost per time unit
-    - **distance**: a cost per distance unit
+    - **time**: a cost per time unit (can be fixed or tiered)
+    - **distance**: a cost per distance unit (can be fixed or tiered)
+    - **calculationMode** (optional): determines how tiered costs are calculated. Options:
+        - `"highestTier"` (default): uses the rate of the highest applicable tier for the entire amount
+        - `"cumulative"`: applies each tier progressively up to its threshold
+
+### Tiered Costs
+
+Both `time` and `distance` costs can be specified as either fixed values or tiered structures. Tiered costs allow different rates based on thresholds, useful for modeling volume discounts or progressive pricing.
+
+**Fixed Cost Example:**
+```json
+{
+  "distance": 0.002,
+  "time": 0.003
+}
+```
+
+**Tiered Cost Example:**
+```json
+{
+  "distance": [
+    {"threshold": 0, "cost": 0.003},
+    {"threshold": 100, "cost": 0.002},
+    {"threshold": 200, "cost": 0.001}
+  ],
+  "time": [
+    {"threshold": 0, "cost": 0.05},
+    {"threshold": 60, "cost": 0.04},
+    {"threshold": 120, "cost": 0.03}
+  ],
+  "calculationMode": "cumulative"
+}
+```
+
+**Calculation Modes:**
+
+- **Highest Tier** (default): For a 6-hour route with time tiers `[(0, 0.05), (60, 0.04), (120, 0.03)]`, the cost would be `6 * 60 * 0.03 = 10.8` (using the highest applicable rate).
+
+- **Cumulative**: For the same route, the cost would be `60 * 0.05 + 60 * 0.04 + 240 * 0.03 = 3 + 2.4 + 7.2 = 12.6` (each tier applied to its portion).
 
 - **shifts** (required): specify one or more vehicle shift. See detailed description below.
 

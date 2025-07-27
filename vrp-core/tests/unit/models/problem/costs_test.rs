@@ -191,18 +191,18 @@ mod tiered_costs {
     use std::sync::Arc;
 
     fn create_test_tiered_costs() -> TieredCosts {
-        TieredCosts {
-            per_distance: TieredCost::tiered(vec![
+        TieredCosts::with_highest_tier_mode(
+            TieredCost::tiered(vec![
                 CostTier { threshold: 0.0, cost: 1.0 },
                 CostTier { threshold: 100.0, cost: 2.0 },
                 CostTier { threshold: 200.0, cost: 3.0 },
             ]).unwrap(),
-            per_driving_time: TieredCost::tiered(vec![
+            TieredCost::tiered(vec![
                 CostTier { threshold: 0.0, cost: 0.5 },
                 CostTier { threshold: 50.0, cost: 1.0 },
                 CostTier { threshold: 100.0, cost: 1.5 },
             ]).unwrap(),
-        }
+        )
     }
 
     fn create_test_transport_cost() -> Arc<dyn TransportCost> {

@@ -117,7 +117,8 @@ mod actual {
                     costs: VehicleCosts { 
                         fixed: Some(25.), 
                         distance: TieredCost::Fixed(0.0002), 
-                        time: TieredCost::Fixed(0.005) 
+                        time: TieredCost::Fixed(0.005),
+                        calculation_mode: None,
                     },
                     shifts: vec![VehicleShift {
                         start: ShiftStart {

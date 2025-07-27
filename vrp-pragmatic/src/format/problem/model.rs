@@ -8,7 +8,7 @@ use crate::format::{FormatError, Location, MultiFormatError};
 use serde::{Deserialize, Serialize};
 use std::io::{BufReader, BufWriter, Error, Read, Write};
 use vrp_core::prelude::Float;
-use vrp_core::models::common::{CostTier as CoreCostTier, TieredCost as CoreTieredCost};
+use vrp_core::models::common::{CostTier as CoreCostTier, TieredCost as CoreTieredCost, TieredCostCalculationMode as CoreTieredCostCalculationMode};
 // region Plan
 
 /// Relation type.
@@ -232,6 +232,34 @@ pub struct Plan {
 
 // region Fleet
 
+/// Determines how tiered costs are calculated.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum TieredCostCalculationMode {
+    /// Uses the rate of the highest applicable tier for the entire amount.
+    HighestTier,
+    /// Uses cumulative calculation where each tier is applied up to its threshold.
+    Cumulative,
+}
+
+impl From<TieredCostCalculationMode> for CoreTieredCostCalculationMode {
+    fn from(api_mode: TieredCostCalculationMode) -> Self {
+        match api_mode {
+            TieredCostCalculationMode::HighestTier => CoreTieredCostCalculationMode::HighestTier,
+            TieredCostCalculationMode::Cumulative => CoreTieredCostCalculationMode::Cumulative,
+        }
+    }
+}
+
+impl From<CoreTieredCostCalculationMode> for TieredCostCalculationMode {
+    fn from(core_mode: CoreTieredCostCalculationMode) -> Self {
+        match core_mode {
+            CoreTieredCostCalculationMode::HighestTier => TieredCostCalculationMode::HighestTier,
+            CoreTieredCostCalculationMode::Cumulative => TieredCostCalculationMode::Cumulative,
+        }
+    }
+}
+
 /// API wrapper for cost tier with serde support.
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub struct CostTier {
@@ -394,6 +422,10 @@ pub struct VehicleCosts {
 
     /// Cost per time unit - can be fixed or tiered.
     pub time: TieredCost,
+
+    /// Calculation mode for tiered costs (defaults to "highestTier" for backward compatibility).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub calculation_mode: Option<TieredCostCalculationMode>,
 }
 
 /// Specifies vehicle shift start.

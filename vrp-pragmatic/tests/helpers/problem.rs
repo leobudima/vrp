@@ -230,7 +230,8 @@ pub fn create_default_vehicle_costs() -> VehicleCosts {
     VehicleCosts { 
         fixed: Some(10.), 
         distance: TieredCost::Fixed(1.), 
-        time: TieredCost::Fixed(1.) 
+        time: TieredCost::Fixed(1.),
+        calculation_mode: None,
     }
 }
 

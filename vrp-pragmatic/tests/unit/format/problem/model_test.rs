@@ -152,6 +152,7 @@ mod tiered_costs {
                 CostTier { threshold: 100.0, cost: 2.0 },
             ]),
             time: TieredCost::Fixed(1.5),
+            calculation_mode: None,
         };
 
         let json_value = serde_json::to_value(&original_costs).expect("Should serialize");

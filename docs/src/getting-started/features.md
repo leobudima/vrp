@@ -58,3 +58,15 @@ list describes common VRP variations supported by the project:
  - **Traveling Salesman Problem (TSP)**: this is a specific case of VRP when there is only one vehicle.
 
  In general, all these variations can be combined together in one single problem definition in `pragmatic` format.
+
+## Cost Modeling Features
+
+Beyond the core VRP variations, the solver provides advanced cost modeling capabilities:
+
+- **Fixed and Variable Costs**: Support for fixed costs per vehicle tour plus variable costs based on time and distance.
+
+- **Tiered Cost Structures**: Model volume discounts and progressive pricing with multi-tier cost structures. See [tiered costs](../examples/pragmatic/basics/tiered-costs.md) example.
+
+- **Multiple Calculation Modes**: Choose between highest-tier or cumulative calculation methods for tiered costs to match your specific business model.
+
+- **Mixed Fleet Economics**: Different vehicles in the same fleet can use different cost structures, allowing realistic modeling of diverse vehicle types with varying operating costs.

@@ -125,10 +125,15 @@ pub(super) fn read_fleet(api_problem: &ApiProblem, props: &ProblemProperties, co
         // Create tiered costs if needed
         let tiered_costs = if matches!(vehicle.costs.distance, model::TieredCost::Tiered(_)) 
                               || matches!(vehicle.costs.time, model::TieredCost::Tiered(_)) {
-            Some(TieredCosts {
-                per_distance: vehicle.costs.distance.clone().into(),
-                per_driving_time: vehicle.costs.time.clone().into(),
-            })
+            let calculation_mode = vehicle.costs.calculation_mode
+                .clone()
+                .unwrap_or(model::TieredCostCalculationMode::HighestTier)
+                .into();
+            Some(TieredCosts::new(
+                vehicle.costs.distance.clone().into(),
+                vehicle.costs.time.clone().into(),
+                calculation_mode,
+            ))
         } else {
             None
         };

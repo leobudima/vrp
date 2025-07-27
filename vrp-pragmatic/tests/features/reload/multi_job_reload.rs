@@ -66,7 +66,7 @@ fn can_properly_handle_load_without_capacity_violation() {
         },
         fleet: Fleet {
             vehicles: vec![VehicleType {
-                costs: VehicleCosts { fixed: Some(20.0), distance: TieredCost::Fixed(0.002), time: TieredCost::Fixed(0.003) },
+                costs: VehicleCosts { fixed: Some(20.0), distance: TieredCost::Fixed(0.002), time: TieredCost::Fixed(0.003), calculation_mode: None },
                 shifts: vec![VehicleShift {
                     reloads: Some(vec![
                         VehicleReload {

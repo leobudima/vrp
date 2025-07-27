@@ -46,6 +46,7 @@
         * [Relations](examples/pragmatic/basics/relations.md)
         * [Skills](examples/pragmatic/basics/skills.md)
         * [Multiple profiles](examples/pragmatic/basics/profiles.md)
+        * [Tiered costs](examples/pragmatic/basics/tiered-costs.md)
         * [Unassigned job](examples/pragmatic/basics/unassigned.md)
     * [Clustering](examples/pragmatic/clustering/index.md)
       * [Vicinity continuation](examples/pragmatic/clustering/vicinity-continue.md)

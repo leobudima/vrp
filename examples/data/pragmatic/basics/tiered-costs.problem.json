@@ -1,0 +1,164 @@
+{
+  "plan": {
+    "jobs": [
+      {
+        "id": "job1",
+        "deliveries": [
+          {
+            "places": [
+              {
+                "location": {
+                  "lat": 52.52599,
+                  "lng": 13.45413
+                },
+                "duration": 300.0,
+                "times": [
+                  [
+                    "2019-07-04T09:00:00Z",
+                    "2019-07-04T18:00:00Z"
+                  ]
+                ]
+              }
+            ],
+            "demand": [1]
+          }
+        ]
+      },
+      {
+        "id": "job2",
+        "deliveries": [
+          {
+            "places": [
+              {
+                "location": {
+                  "lat": 52.5225,
+                  "lng": 13.4095
+                },
+                "duration": 240.0,
+                "times": [
+                  [
+                    "2019-07-04T10:00:00Z",
+                    "2019-07-04T16:00:00Z"
+                  ]
+                ]
+              }
+            ],
+            "demand": [1]
+          }
+        ]
+      },
+      {
+        "id": "job3",
+        "deliveries": [
+          {
+            "places": [
+              {
+                "location": {
+                  "lat": 52.5165,
+                  "lng": 13.3808
+                },
+                "duration": 180.0,
+                "times": [
+                  [
+                    "2019-07-04T11:00:00Z",
+                    "2019-07-04T15:00:00Z"
+                  ]
+                ]
+              }
+            ],
+            "demand": [1]
+          }
+        ]
+      }
+    ]
+  },
+  "fleet": {
+    "vehicles": [
+      {
+        "typeId": "vehicle_standard",
+        "vehicleIds": ["vehicle_1"],
+        "profile": {
+          "matrix": "car"
+        },
+        "costs": {
+          "fixed": 50.0,
+          "distance": [
+            {"threshold": 0, "cost": 0.003},
+            {"threshold": 100, "cost": 0.002},
+            {"threshold": 200, "cost": 0.001}
+          ],
+          "time": [
+            {"threshold": 0, "cost": 0.05},
+            {"threshold": 3600, "cost": 0.04},
+            {"threshold": 7200, "cost": 0.03}
+          ],
+          "calculationMode": "highestTier"
+        },
+        "shifts": [
+          {
+            "start": {
+              "earliest": "2019-07-04T09:00:00Z",
+              "location": {
+                "lat": 52.5316,
+                "lng": 13.3884
+              }
+            },
+            "end": {
+              "latest": "2019-07-04T18:00:00Z",
+              "location": {
+                "lat": 52.5316,
+                "lng": 13.3884
+              }
+            }
+          }
+        ],
+        "capacity": [10]
+      },
+      {
+        "typeId": "vehicle_premium",
+        "vehicleIds": ["vehicle_2"],
+        "profile": {
+          "matrix": "car"
+        },
+        "costs": {
+          "fixed": 80.0,
+          "distance": [
+            {"threshold": 0, "cost": 0.0025},
+            {"threshold": 150, "cost": 0.0015},
+            {"threshold": 300, "cost": 0.001}
+          ],
+          "time": [
+            {"threshold": 0, "cost": 0.04},
+            {"threshold": 3600, "cost": 0.03},
+            {"threshold": 7200, "cost": 0.025}
+          ],
+          "calculationMode": "cumulative"
+        },
+        "shifts": [
+          {
+            "start": {
+              "earliest": "2019-07-04T09:00:00Z",
+              "location": {
+                "lat": 52.5316,
+                "lng": 13.3884
+              }
+            },
+            "end": {
+              "latest": "2019-07-04T18:00:00Z",
+              "location": {
+                "lat": 52.5316,
+                "lng": 13.3884
+              }
+            }
+          }
+        ],
+        "capacity": [15]
+      }
+    ],
+    "profiles": [
+      {
+        "name": "car"
+      }
+    ]
+  }
+}

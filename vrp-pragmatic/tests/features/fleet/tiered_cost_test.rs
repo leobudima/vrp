@@ -23,6 +23,7 @@ fn can_solve_problem_with_tiered_costs() {
                         CostTier { threshold: 0., cost: 0.5 },
                         CostTier { threshold: 600., cost: 1. },
                     ]),
+                    calculation_mode: None,
                 },
                 shifts: vec![create_default_vehicle_shift()],
                 capacity: vec![10],

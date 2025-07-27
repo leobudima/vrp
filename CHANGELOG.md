@@ -19,6 +19,7 @@ are already published. So, I stick to it for now.
 
 * add an experimental objective
 * add naive implementation of LKH local search
+* add tiered cost structures with configurable calculation modes (highest tier vs cumulative)
 
 
 ## [1.25.0] 2024-11-10
