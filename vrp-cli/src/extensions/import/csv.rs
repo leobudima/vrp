@@ -98,6 +98,7 @@ mod actual {
                 value: None,
                 group: None,
                 compatibility: None,
+                affinity: None,
             })
             .collect();
 

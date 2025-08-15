@@ -123,6 +123,10 @@ pub struct Job {
     /// A compatibility group: jobs with different compatibility cannot be assigned to the same tour.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub compatibility: Option<String>,
+
+    /// Vehicle affinity: jobs with same affinity are assigned to the same vehicle across tours.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub affinity: Option<String>,
 }
 
 // region Clustering

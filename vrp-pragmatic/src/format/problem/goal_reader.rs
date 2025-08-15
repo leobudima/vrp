@@ -54,6 +54,10 @@ pub(super) fn create_goal_context(
         features.push(create_group_feature("group", blocks.jobs.size(), GROUP_CONSTRAINT_CODE)?);
     }
 
+    if props.has_affinity {
+        features.push(create_vehicle_affinity_feature("affinity", AFFINITY_CONSTRAINT_CODE)?);
+    }
+
     if props.has_skills {
         features.push(create_skills_feature("skills", SKILL_CONSTRAINT_CODE)?)
     }

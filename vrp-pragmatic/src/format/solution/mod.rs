@@ -101,6 +101,7 @@ fn map_code_reason(code: ViolationCode) -> (&'static str, &'static str) {
             ("RELOAD_RESOURCE_CONSTRAINT", "cannot be assigned due to reload resource constraint")
         }
         RECHARGE_CONSTRAINT_CODE => ("RECHARGE_CONSTRAINT_CODE", "cannot be assigned due to recharge constraint"),
+        AFFINITY_CONSTRAINT_CODE => ("AFFINITY_CONSTRAINT", "cannot be assigned due to vehicle affinity constraint"),
         _ => ("NO_REASON_FOUND", "unknown"),
     }
 }
@@ -122,6 +123,7 @@ fn map_reason_code(reason: &str) -> ViolationCode {
         "COMPATIBILITY_CONSTRAINT" => COMPATIBILITY_CONSTRAINT_CODE,
         "RELOAD_RESOURCE_CONSTRAINT" => RELOAD_RESOURCE_CONSTRAINT_CODE,
         "RECHARGE_CONSTRAINT_CODE" => RECHARGE_CONSTRAINT_CODE,
+        "AFFINITY_CONSTRAINT" => AFFINITY_CONSTRAINT_CODE,
         _ => ViolationCode::unknown(),
     }
 }

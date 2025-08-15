@@ -91,7 +91,8 @@ prop_compose! {
             skills,
             value,
             group,
-            compatibility
+            compatibility,
+            affinity: None,
         }
     }
 }
@@ -138,6 +139,7 @@ prop_compose! {
             value,
             group,
             compatibility,
+            affinity: None,
         }
     }
 }
