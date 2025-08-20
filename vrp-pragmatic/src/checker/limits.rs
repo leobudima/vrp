@@ -52,6 +52,16 @@ fn check_shift_limits(context: &CheckerContext) -> GenericResult<()> {
                     ).into())
                 }
             }
+
+            if let Some(max_work_duration) = limits.max_work_duration {
+                let work_duration = calculate_work_duration_from_tour(tour)?;
+                if work_duration > max_work_duration {
+                    return Err(format!(
+                        "work duration limit violation, expected: not more than {}, got: {}, vehicle id '{}', shift index: {}",
+                        max_work_duration, work_duration, tour.vehicle_id, tour.shift_index
+                    ).into());
+                }
+            }
         }
 
         Ok(())
@@ -126,4 +136,26 @@ fn check_recharge_limits(context: &CheckerContext) -> GenericResult<()> {
             })
             .map(|_| ())
     })
+}
+
+/// Calculate work duration from a tour (first job arrival to last job departure).
+fn calculate_work_duration_from_tour(tour: &crate::format::solution::Tour) -> GenericResult<Float> {
+    // Find all job activities (excluding depot start/end activities)
+    let job_stops: Vec<_> = tour.stops
+        .iter()
+        .filter(|stop| stop.activities().iter().any(|activity| 
+            !matches!(activity.activity_type.as_str(), "departure" | "arrival")))
+        .collect();
+
+    if job_stops.is_empty() {
+        return Ok(0.0);
+    }
+
+    let first_job_stop = job_stops.first().unwrap();
+    let last_job_stop = job_stops.last().unwrap();
+
+    let first_arrival = crate::checker::parse_time(&first_job_stop.schedule().arrival);
+    let last_departure = crate::checker::parse_time(&last_job_stop.schedule().departure);
+
+    Ok(last_departure - first_arrival)
 }

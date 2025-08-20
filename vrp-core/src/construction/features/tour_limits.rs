@@ -37,8 +37,10 @@ pub fn create_travel_limit_feature(
     activity: Arc<dyn ActivityCost>,
     distance_code: ViolationCode,
     duration_code: ViolationCode,
+    work_duration_code: ViolationCode,
     tour_distance_limit_fn: TravelLimitFn<Distance>,
     tour_duration_limit_fn: TravelLimitFn<Duration>,
+    tour_work_duration_limit_fn: TravelLimitFn<Duration>,
 ) -> Result<Feature, GenericError> {
     FeatureBuilder::default()
         .with_name(name)
@@ -46,10 +48,17 @@ pub fn create_travel_limit_feature(
             transport: transport.clone(),
             tour_distance_limit_fn,
             tour_duration_limit_fn: tour_duration_limit_fn.clone(),
+            tour_work_duration_limit_fn: tour_work_duration_limit_fn.clone(),
             distance_code,
             duration_code,
+            work_duration_code,
         })
-        .with_state(TravelLimitState { tour_duration_limit_fn, transport, activity })
+        .with_state(TravelLimitState { 
+            tour_duration_limit_fn, 
+            tour_work_duration_limit_fn, 
+            transport, 
+            activity 
+        })
         .build()
 }
 
@@ -90,13 +99,72 @@ struct TravelLimitConstraint {
     transport: Arc<dyn TransportCost>,
     tour_distance_limit_fn: TravelLimitFn<Distance>,
     tour_duration_limit_fn: TravelLimitFn<Duration>,
+    tour_work_duration_limit_fn: TravelLimitFn<Duration>,
     distance_code: ViolationCode,
     duration_code: ViolationCode,
+    work_duration_code: ViolationCode,
 }
 
 impl TravelLimitConstraint {
     fn calculate_travel(&self, route_ctx: &RouteContext, activity_ctx: &ActivityContext) -> (Distance, Duration) {
         calculate_travel_delta(route_ctx, activity_ctx, self.transport.as_ref())
+    }
+
+    fn calculate_work_duration_delta(&self, route_ctx: &RouteContext, activity_ctx: &ActivityContext) -> Duration {
+        // Work duration is from first job arrival to last job departure.
+        // Calculate the precise impact of inserting the new activity.
+        
+        let route = route_ctx.route();
+        let current_work_duration = route_ctx.state().get_work_duration().copied().unwrap_or(0.0);
+        
+        // Get all current job activities (excluding depot start/end)
+        let current_job_activities: Vec<_> = route.tour.all_activities()
+            .filter(|act| act.job.is_some())
+            .collect();
+        
+        // Calculate arrival and departure times for the new activity
+        let estimated_arrival = activity_ctx.prev.schedule.departure + 
+            self.transport.duration(
+                route, 
+                activity_ctx.prev.place.location, 
+                activity_ctx.target.place.location, 
+                crate::models::problem::TravelTime::Departure(activity_ctx.prev.schedule.departure)
+            );
+        let actual_arrival = estimated_arrival.max(activity_ctx.target.place.time.start);
+        let departure = actual_arrival + activity_ctx.target.place.duration;
+        
+        // If no jobs exist, the new activity will be the only job
+        if current_job_activities.is_empty() {
+            return departure - actual_arrival; // Service duration + any waiting time
+        }
+        
+        // For existing jobs, calculate precise boundary impact
+        let first_job = current_job_activities.first().unwrap();
+        let last_job = current_job_activities.last().unwrap();
+        
+        let current_first_arrival = first_job.schedule.arrival;
+        let current_last_departure = last_job.schedule.departure;
+        
+        // Determine new boundaries after insertion
+        let new_first_arrival = current_first_arrival.min(actual_arrival);
+        
+        // Check if we're inserting at the end (next activity is depot end or None)
+        let is_inserting_at_end = activity_ctx.next.is_none() || 
+            activity_ctx.next.unwrap().job.is_none();
+        
+        let new_last_departure = if is_inserting_at_end {
+            // New activity becomes the last job
+            departure
+        } else {
+            // Middle insertion - current last job remains the last
+            // However, we need to account for potential schedule shifts due to the insertion
+            // Use travel delta as an approximation of the schedule impact
+            let (_, travel_delta) = self.calculate_travel(route_ctx, activity_ctx);
+            current_last_departure + travel_delta
+        };
+        
+        let new_work_duration = new_last_departure - new_first_arrival;
+        new_work_duration - current_work_duration
     }
 }
 
@@ -107,8 +175,9 @@ impl FeatureConstraint for TravelLimitConstraint {
             MoveContext::Activity { route_ctx, activity_ctx, .. } => {
                 let tour_distance_limit = (self.tour_distance_limit_fn)(route_ctx.route().actor.as_ref());
                 let tour_duration_limit = (self.tour_duration_limit_fn)(route_ctx.route().actor.as_ref());
+                let tour_work_duration_limit = (self.tour_work_duration_limit_fn)(route_ctx.route().actor.as_ref());
 
-                if tour_distance_limit.is_some() || tour_duration_limit.is_some() {
+                if tour_distance_limit.is_some() || tour_duration_limit.is_some() || tour_work_duration_limit.is_some() {
                     let (change_distance, change_duration) = self.calculate_travel(route_ctx, activity_ctx);
 
                     if let Some(distance_limit) = tour_distance_limit {
@@ -126,6 +195,16 @@ impl FeatureConstraint for TravelLimitConstraint {
                             return ConstraintViolation::skip(self.duration_code);
                         }
                     }
+
+                    if let Some(work_duration_limit) = tour_work_duration_limit {
+                        let curr_work_dur = route_ctx.state().get_work_duration().copied().unwrap_or(0.);
+                        let work_duration_delta = self.calculate_work_duration_delta(route_ctx, activity_ctx);
+                        let total_work_duration = curr_work_dur + work_duration_delta;
+                        
+                        if work_duration_limit < total_work_duration {
+                            return ConstraintViolation::skip(self.work_duration_code);
+                        }
+                    }
                 }
 
                 None
@@ -140,6 +219,7 @@ impl FeatureConstraint for TravelLimitConstraint {
 
 struct TravelLimitState {
     tour_duration_limit_fn: TravelLimitFn<Duration>,
+    tour_work_duration_limit_fn: TravelLimitFn<Duration>,
     transport: Arc<dyn TransportCost>,
     activity: Arc<dyn ActivityCost>,
 }
@@ -160,7 +240,10 @@ impl FeatureState for TravelLimitState {
         let Some((route, actor, start_place)) = solution_ctx
             .registry
             .next_route()
-            .filter(|route_ctx| (self.tour_duration_limit_fn)(route_ctx.route().actor.as_ref()).is_some())
+            .filter(|route_ctx| {
+                (self.tour_duration_limit_fn)(route_ctx.route().actor.as_ref()).is_some() ||
+                (self.tour_work_duration_limit_fn)(route_ctx.route().actor.as_ref()).is_some()
+            })
             .map(|route_ctx| route_ctx.route())
             .filter_map(|route| route.actor.detail.start.clone().map(|start| (route, route.actor.clone(), start)))
             .next()
@@ -236,6 +319,7 @@ impl FeatureState for TravelLimitState {
         if let Some(limit_duration) = (self.tour_duration_limit_fn)(route_ctx.route().actor.as_ref()) {
             route_ctx.state_mut().set_limit_duration(limit_duration);
         }
+        // Note: work duration limit is handled separately in constraint evaluation
     }
 
     fn accept_solution_state(&self, _: &mut SolutionContext) {}

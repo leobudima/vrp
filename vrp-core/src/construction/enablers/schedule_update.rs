@@ -9,6 +9,7 @@ custom_activity_state!(pub(crate) WaitingTime typeof Timestamp);
 custom_tour_state!(pub TotalDistance typeof Distance);
 custom_tour_state!(pub TotalDuration typeof Duration);
 custom_tour_state!(pub(crate) LimitDuration typeof Duration);
+custom_tour_state!(pub(crate) WorkDuration typeof Duration);
 
 /// Updates route schedule data.
 pub fn update_route_schedule(
@@ -126,4 +127,19 @@ fn update_statistics(route_ctx: &mut RouteContext, transport: &(dyn TransportCos
 
     state.set_total_distance(total_dist);
     state.set_total_duration(total_dur);
+    
+    // Calculate work duration (from first job arrival to last job departure)
+    let job_activities: Vec<_> = route.tour.all_activities()
+        .filter(|act| act.job.is_some())
+        .collect();
+    
+    let work_duration = if job_activities.is_empty() {
+        0.0
+    } else {
+        let first_job = job_activities.first().unwrap();
+        let last_job = job_activities.last().unwrap();
+        last_job.schedule.departure - first_job.schedule.arrival
+    };
+    
+    state.set_work_duration(work_duration);
 }

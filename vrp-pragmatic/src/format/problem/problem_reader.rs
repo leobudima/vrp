@@ -156,7 +156,7 @@ fn get_problem_properties(api_problem: &ApiProblem, matrices: &[Matrix]) -> Prob
         .fleet
         .vehicles
         .iter()
-        .any(|v| v.limits.as_ref().is_some_and(|l| l.max_duration.or(l.max_distance).is_some()));
+        .any(|v| v.limits.as_ref().is_some_and(|l| l.max_duration.or(l.max_distance).or(l.max_work_duration).is_some()));
 
     ProblemProperties {
         has_multi_dimen_capacity,

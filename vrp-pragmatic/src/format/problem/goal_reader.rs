@@ -420,12 +420,12 @@ fn get_tour_limit_feature(
     transport: Arc<dyn TransportCost>,
     activity: Arc<dyn ActivityCost>,
 ) -> GenericResult<Feature> {
-    let (distances, durations) = api_problem
+    let (distances, durations, work_durations) = api_problem
         .fleet
         .vehicles
         .iter()
         .filter_map(|vehicle| vehicle.limits.as_ref().map(|limits| (vehicle, limits)))
-        .fold((HashMap::new(), HashMap::new()), |(mut distances, mut durations), (vehicle, limits)| {
+        .fold((HashMap::new(), HashMap::new(), HashMap::new()), |(mut distances, mut durations, mut work_durations), (vehicle, limits)| {
             limits.max_distance.iter().for_each(|max_distance| {
                 distances.insert(vehicle.type_id.clone(), *max_distance);
             });
@@ -434,7 +434,11 @@ fn get_tour_limit_feature(
                 durations.insert(vehicle.type_id.clone(), *max_duration);
             });
 
-            (distances, durations)
+            limits.max_work_duration.iter().for_each(|max_work_duration| {
+                work_durations.insert(vehicle.type_id.clone(), *max_work_duration);
+            });
+
+            (distances, durations, work_durations)
         });
 
     let get_limit = |limit_map: HashMap<String, Float>| {
@@ -449,8 +453,10 @@ fn get_tour_limit_feature(
         activity,
         DISTANCE_LIMIT_CONSTRAINT_CODE,
         DURATION_LIMIT_CONSTRAINT_CODE,
+        WORK_DURATION_LIMIT_CONSTRAINT_CODE,
         get_limit(distances),
         get_limit(durations),
+        get_limit(work_durations),
     )
 }
 
