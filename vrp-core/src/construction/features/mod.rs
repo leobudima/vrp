@@ -27,7 +27,7 @@ mod groups;
 pub use self::groups::{JobGroupDimension, create_group_feature};
 
 mod vehicle_affinity;
-pub use self::vehicle_affinity::{JobAffinityDimension, create_vehicle_affinity_feature};
+pub use self::vehicle_affinity::{JobAffinityDimension, JobAffinitySequenceDimension, JobAffinityDurationDaysDimension, create_vehicle_affinity_feature};
 
 mod hierarchical_areas;
 pub use self::hierarchical_areas::*;

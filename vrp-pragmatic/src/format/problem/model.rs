@@ -83,6 +83,18 @@ pub struct JobTask {
     pub order: Option<i32>,
 }
 
+/// Specifies vehicle affinity information for multi-day job scheduling.
+#[derive(Clone, Deserialize, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AffinityInfo {
+    /// Affinity key: jobs with same key are assigned to the same vehicle.
+    pub key: String,
+    /// Sequence order within affinity group (0, 1, 2...).
+    pub sequence: u32,
+    /// Expected duration in days for sequence validation.
+    pub duration_days: u32,
+}
+
 /// A customer job model. Actual tasks of the job specified by list of pickups and deliveries
 /// which follows these rules:
 /// * all of them should be completed or none of them.
@@ -126,7 +138,7 @@ pub struct Job {
 
     /// Vehicle affinity: jobs with same affinity are assigned to the same vehicle across tours.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub affinity: Option<String>,
+    pub affinity: Option<AffinityInfo>,
 }
 
 // region Clustering

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use vrp_core::{
     construction::features::{
-        BreakPolicy, JobAffinityDimension, JobCompatibilityDimension, JobDemandDimension, JobGroupDimension, JobSkills as FeatureJobSkills,
+        BreakPolicy, JobAffinityDimension, JobAffinitySequenceDimension, JobAffinityDurationDaysDimension, JobCompatibilityDimension, JobDemandDimension, JobGroupDimension, JobSkills as FeatureJobSkills,
         JobSkillsDimension,
     },
     models::common::*,
@@ -426,7 +426,9 @@ fn fill_dimens(job: &ApiJob, dimens: &mut Dimensions) {
     }
 
     if let Some(affinity) = job.affinity.clone() {
-        dimens.set_job_affinity(affinity);
+        dimens.set_job_affinity(affinity.key);
+        dimens.set_job_affinity_sequence(affinity.sequence);
+        dimens.set_job_affinity_duration_days(affinity.duration_days);
     }
 
     if let Some(skills) = get_skills(&job.skills) {

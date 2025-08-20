@@ -3,7 +3,6 @@ use crate::construction::enablers::create_typed_actor_groups;
 use crate::helpers::models::domain::{TestGoalContextBuilder, test_random};
 use crate::helpers::models::problem::{FleetBuilder, TestSingleBuilder, test_driver, test_vehicle_with_id};
 use crate::helpers::models::solution::{ActivityBuilder, RouteBuilder, RouteContextBuilder};
-use crate::models::problem::Actor;
 use crate::models::problem::{Fleet, Single};
 use crate::models::solution::Registry;
 use crate::construction::heuristics::RegistryContext;
@@ -26,11 +25,15 @@ fn create_test_fleet() -> Fleet {
         .build()
 }
 
-fn create_test_single(affinity: Option<&str>) -> Arc<Single> {
+fn create_test_single(affinity: Option<&str>, sequence: Option<u32>) -> Arc<Single> {
     let mut builder = TestSingleBuilder::default();
 
     if let Some(affinity) = affinity {
         builder.dimens_mut().set_job_affinity(affinity.to_string());
+        if let Some(seq) = sequence {
+            builder.dimens_mut().set_job_affinity_sequence(seq);
+            builder.dimens_mut().set_job_affinity_duration_days(2); // Default duration
+        }
     }
 
     builder.build_shared()
@@ -54,7 +57,7 @@ fn create_test_solution_context(
                             .with_vehicle(fleet, vehicle_id)
                             .add_activities(affinities.into_iter().map(|affinity| {
                                 ActivityBuilder::with_location(1).job(
-                                    affinity.map(|a| create_test_single(Some(a)))
+                                    affinity.map(|a| create_test_single(Some(a), None))
                                 ).build()
                             }))
                             .build(),
@@ -71,7 +74,8 @@ fn create_test_solution_context(
 #[test]
 fn can_assign_jobs_with_same_affinity_to_same_vehicle() {
     let fleet = create_test_fleet();
-    let job = Job::Single(create_test_single(Some("affinity1")));
+    // Test basic affinity matching without sequence validation
+    let job = Job::Single(create_test_single(Some("affinity1"), None));
     let route_ctx = RouteContextBuilder::default()
         .with_route(RouteBuilder::default().with_vehicle(&fleet, "v1").build())
         .build();
@@ -93,7 +97,7 @@ fn can_assign_jobs_with_same_affinity_to_same_vehicle() {
 #[test]
 fn cannot_assign_jobs_with_same_affinity_to_different_vehicle() {
     let fleet = create_test_fleet();
-    let job = Job::Single(create_test_single(Some("affinity1")));
+    let job = Job::Single(create_test_single(Some("affinity1"), None));
     let route_ctx = RouteContextBuilder::default()
         .with_route(RouteBuilder::default().with_vehicle(&fleet, "v2").build())
         .build();
@@ -115,7 +119,7 @@ fn cannot_assign_jobs_with_same_affinity_to_different_vehicle() {
 #[test]
 fn can_assign_jobs_with_different_affinity_to_any_vehicle() {
     let fleet = create_test_fleet();
-    let job = Job::Single(create_test_single(Some("affinity2")));
+    let job = Job::Single(create_test_single(Some("affinity2"), None));
     let route_ctx = RouteContextBuilder::default()
         .with_route(RouteBuilder::default().with_vehicle(&fleet, "v2").build())
         .build();
@@ -137,7 +141,7 @@ fn can_assign_jobs_with_different_affinity_to_any_vehicle() {
 #[test]
 fn can_assign_jobs_without_affinity_to_any_vehicle() {
     let fleet = create_test_fleet();
-    let job = Job::Single(create_test_single(None));
+    let job = Job::Single(create_test_single(None, None));
     let route_ctx = RouteContextBuilder::default()
         .with_route(RouteBuilder::default().with_vehicle(&fleet, "v1").build())
         .build();
