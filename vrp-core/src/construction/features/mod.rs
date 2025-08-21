@@ -29,6 +29,17 @@ pub use self::groups::{JobGroupDimension, create_group_feature};
 mod vehicle_affinity;
 pub use self::vehicle_affinity::{JobAffinityDimension, JobAffinitySequenceDimension, JobAffinityDurationDaysDimension, create_vehicle_affinity_feature};
 
+mod sync;
+pub use self::sync::{
+    JobSyncGroupDimension,
+    JobSyncIndexDimension,
+    JobSyncSizeDimension,
+    JobSyncToleranceDimension,
+    create_job_sync_feature,
+    create_job_sync_feature_with_threshold,
+    create_job_sync_feature_with_threshold_and_costs,
+};
+
 mod hierarchical_areas;
 pub use self::hierarchical_areas::*;
 

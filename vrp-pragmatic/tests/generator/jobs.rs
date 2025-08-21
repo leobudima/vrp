@@ -93,6 +93,7 @@ prop_compose! {
             group,
             compatibility,
             affinity: None,
+            sync: None,
         }
     }
 }
@@ -140,6 +141,7 @@ prop_compose! {
             group,
             compatibility,
             affinity: None,
+            sync: None,
         }
     }
 }

@@ -110,6 +110,7 @@ struct ProblemProperties {
     has_affinity: bool,
     has_tour_size_limits: bool,
     has_tour_travel_limits: bool,
+    has_sync: bool,
 }
 
 /// Keeps track of materialized problem building blocks.

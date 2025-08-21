@@ -95,6 +95,21 @@ pub struct AffinityInfo {
     pub duration_days: u32,
 }
 
+/// Specifies job synchronization information for multi-technician jobs.
+#[derive(Clone, Deserialize, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobSync {
+    /// Sync group key: jobs with same key must be synchronized.
+    pub key: String,
+    /// Index within sync group (0, 1, 2...).
+    pub index: u32,
+    /// Number of vehicles required for this synchronized job.
+    pub vehicles_required: u32,
+    /// Time tolerance for synchronization in seconds (optional, defaults to 900 = 15 minutes).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tolerance: Option<f64>,
+}
+
 /// A customer job model. Actual tasks of the job specified by list of pickups and deliveries
 /// which follows these rules:
 /// * all of them should be completed or none of them.
@@ -139,6 +154,10 @@ pub struct Job {
     /// Vehicle affinity: jobs with same affinity are assigned to the same vehicle across tours.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub affinity: Option<AffinityInfo>,
+
+    /// Job synchronization: requires multiple vehicles to work on the same job simultaneously.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sync: Option<JobSync>,
 }
 
 // region Clustering

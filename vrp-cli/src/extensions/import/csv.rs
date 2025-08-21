@@ -99,6 +99,7 @@ mod actual {
                 group: None,
                 compatibility: None,
                 affinity: None,
+                sync: None,
             })
             .collect();
 

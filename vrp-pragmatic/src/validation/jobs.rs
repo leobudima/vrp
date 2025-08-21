@@ -5,6 +5,7 @@ mod jobs_test;
 use super::*;
 use crate::utils::combine_error_results;
 use vrp_core::models::common::MultiDimLoad;
+use serde_json;
 
 /// Checks that plan has no jobs with duplicate ids.
 fn check_e1100_no_jobs_with_duplicate_ids(ctx: &ValidationContext) -> Result<(), FormatError> {
@@ -190,6 +191,72 @@ pub fn validate_jobs(ctx: &ValidationContext) -> Result<(), MultiFormatError> {
         check_e1105_empty_jobs(ctx),
         check_e1106_negative_duration(ctx),
         check_e1107_negative_demand(ctx),
+        check_sync_groups_consistency(ctx),
     ])
     .map_err(From::from)
+}
+
+/// Checks that sync groups are complete and consistent.
+fn check_sync_groups_consistency(ctx: &ValidationContext) -> Result<(), FormatError> {
+    // Group jobs by sync key
+    use std::collections::HashMap;
+    let mut groups: HashMap<String, Vec<&Job>> = HashMap::new();
+    for job in ctx.jobs() {
+        if let Some(sync) = &job.sync {
+            groups.entry(sync.key.clone()).or_default().push(job);
+        }
+    }
+
+    // Validate each group
+    let mut errors: Vec<String> = Vec::new();
+    for (key, jobs) in groups.into_iter() {
+        // Use first job as reference
+        let reference = jobs.first().unwrap();
+        let sync = reference.sync.as_ref().unwrap();
+        let required = sync.vehicles_required as usize;
+
+        // Cardinality
+        if jobs.len() != required {
+            errors.push(format!("sync group '{}' requires {} jobs, found {}", key, required, jobs.len()));
+            continue;
+        }
+
+        // Indices set must be 0..required-1
+        let mut indices = jobs.iter().map(|j| j.sync.as_ref().unwrap().index).collect::<Vec<_>>();
+        indices.sort_unstable();
+        if indices != (0..required as u32).collect::<Vec<_>>() {
+            errors.push(format!("sync group '{}' has invalid indices: expected 0..{}", key, required - 1));
+        }
+
+        // Basic consistency: all jobs should be equivalent in core service definition
+        // Allow skill differences as complementary skills may be required.
+        let encode_tasks = |job: &Job| serde_json::to_string(&(job.pickups.as_ref(), job.deliveries.as_ref(), job.replacements.as_ref(), job.services.as_ref())).unwrap_or_default();
+        let encode_attrs = |job: &Job| serde_json::to_string(&(job.group.as_ref(), job.compatibility.as_ref(), job.affinity.as_ref().map(|a| (&a.key, a.sequence, a.duration_days)))).unwrap_or_default();
+        let ref_tasks_sig = encode_tasks(reference);
+        let ref_attrs_sig = encode_attrs(reference);
+
+        for job in jobs.iter().skip(1) {
+            // Places/time/duration/demand equivalency by serialized structure equality
+            if ref_tasks_sig != encode_tasks(job) {
+                errors.push(format!("sync group '{}' has inconsistent task definitions between clones (places/times/durations/demand)", key));
+                break;
+            }
+
+            // Group/compatibility/affinity equality (skills intentionally ignored)
+            if ref_attrs_sig != encode_attrs(job) {
+                errors.push(format!("sync group '{}' has inconsistent group/compatibility/affinity among clones", key));
+                break;
+            }
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(FormatError::new(
+            "E1110".to_string(),
+            "invalid sync groups".to_string(),
+            errors.join("; "),
+        ))
+    }
 }

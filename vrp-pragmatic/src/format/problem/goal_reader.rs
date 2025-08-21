@@ -5,7 +5,7 @@ use vrp_core::construction::clustering::vicinity::ClusterInfoDimension;
 use vrp_core::construction::enablers::FeatureCombinator;
 use vrp_core::construction::features::*;
 use vrp_core::models::common::{Demand, LoadOps, MultiDimLoad, SingleDimLoad};
-use vrp_core::models::problem::{Actor, Single, TransportCost};
+use vrp_core::models::problem::{Actor, Single, TransportCost, ActivityCost};
 use vrp_core::models::solution::Route;
 use vrp_core::models::{Feature, FeatureObjective, GoalBuilder, GoalContext, GoalContextBuilder};
 use vrp_core::rosomaxa::evolution::objectives::dominance_order;
@@ -58,6 +58,8 @@ pub(super) fn create_goal_context(
         features.push(create_vehicle_affinity_feature("affinity", AFFINITY_CONSTRAINT_CODE)?);
     }
 
+    // Note: sync feature (with objective) is injected above as a layer; no need to add it again here.
+
     if props.has_skills {
         features.push(create_skills_feature("skills", SKILL_CONSTRAINT_CODE)?)
     }
@@ -98,10 +100,25 @@ fn get_objective_feature_layers(
 ) -> GenericResult<Vec<FeatureLayer>> {
     let objectives = get_objectives(api_problem, props);
 
-    objectives
+    // Build layers from objectives
+    let mut layers = objectives
         .iter()
         .map(|objective| get_objective_feature_layer(objective, blocks, props))
-        .collect::<GenericResult<_>>()
+        .collect::<GenericResult<Vec<_>>>()?;
+
+    // Inject sync objective as a separate layer when sync is present
+    if props.has_sync {
+        let sync_feature = create_job_sync_feature_with_threshold_and_costs(
+            "sync",
+            SYNC_CONSTRAINT_CODE,
+            1.0,
+            blocks.transport.clone(),
+            blocks.activity.clone(),
+        )?;
+        layers.push(FeatureLayer::Single(sync_feature));
+    }
+
+    Ok(layers)
 }
 
 fn get_objective_feature_layer(
