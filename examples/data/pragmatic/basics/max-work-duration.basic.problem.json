@@ -1,0 +1,240 @@
+{
+	"plan": {
+		"jobs": [
+			{
+				"id": "service_call_1",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									1.0,
+									1.0
+								],
+								"duration": 3600
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_2",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									2.0,
+									2.0
+								],
+								"duration": 2400
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_3",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									3.0,
+									3.0
+								],
+								"duration": 1800
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_4",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									4.0,
+									4.0
+								],
+								"duration": 2700
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_5",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									5.0,
+									5.0
+								],
+								"duration": 3300
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_6",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									6.0,
+									6.0
+								],
+								"duration": 1500
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_7",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									7.0,
+									7.0
+								],
+								"duration": 2100
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			},
+			{
+				"id": "service_call_8",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									8.0,
+									8.0
+								],
+								"duration": 2850
+							}
+						],
+						"demand": [
+							0
+						]
+					}
+				]
+			}
+		]
+	},
+	"fleet": {
+		"vehicles": [
+			{
+				"typeId": "field_technician_limited",
+				"vehicleIds": [
+					"tech_001",
+					"tech_002"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 100.0,
+					"distance": 0.002,
+					"time": 0.003
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					10
+				],
+				"limits": {
+					"maxDuration": 36000,
+					"maxWorkDuration": 21600
+				}
+			},
+			{
+				"typeId": "field_technician_unlimited",
+				"vehicleIds": [
+					"tech_003"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 120.0,
+					"distance": 0.0025,
+					"time": 0.004
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					10
+				],
+				"limits": {
+					"maxDuration": 36000
+				}
+			}
+		]
+	}
+}

@@ -1,0 +1,247 @@
+{
+	"plan": {
+		"jobs": [
+			{
+				"id": "customer_alpha_day1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [
+									1.0,
+									1.0
+								],
+								"duration": 2400,
+								"times": [
+									[
+										"2024-07-04T09:00:00Z",
+										"2024-07-04T17:00:00Z"
+									]
+								]
+							}
+						],
+						"demand": [
+							5
+						]
+					}
+				],
+				"affinity": {
+					"key": "customer_alpha_installation",
+					"sequence": 0,
+					"duration_days": 3
+				}
+			},
+			{
+				"id": "customer_alpha_day2",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [
+									1.0,
+									1.0
+								],
+								"duration": 3600,
+								"times": [
+									[
+										"2024-07-05T09:00:00Z",
+										"2024-07-05T17:00:00Z"
+									]
+								]
+							}
+						],
+						"demand": [
+							8
+						]
+					}
+				],
+				"affinity": {
+					"key": "customer_alpha_installation",
+					"sequence": 1,
+					"duration_days": 3
+				}
+			},
+			{
+				"id": "customer_alpha_day3",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									1.0,
+									1.0
+								],
+								"duration": 1800,
+								"times": [
+									[
+										"2024-07-06T09:00:00Z",
+										"2024-07-06T17:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"affinity": {
+					"key": "customer_alpha_installation",
+					"sequence": 2,
+					"duration_days": 3
+				}
+			},
+			{
+				"id": "customer_beta_day1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [
+									5.0,
+									5.0
+								],
+								"duration": 2700,
+								"times": [
+									[
+										"2024-07-04T10:00:00Z",
+										"2024-07-04T16:00:00Z"
+									]
+								]
+							}
+						],
+						"demand": [
+							6
+						]
+					}
+				],
+				"affinity": {
+					"key": "customer_beta_maintenance",
+					"sequence": 0,
+					"duration_days": 2
+				}
+			},
+			{
+				"id": "customer_beta_day2",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									5.0,
+									5.0
+								],
+								"duration": 1200,
+								"times": [
+									[
+										"2024-07-05T10:00:00Z",
+										"2024-07-05T16:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"affinity": {
+					"key": "customer_beta_maintenance",
+					"sequence": 1,
+					"duration_days": 2
+				}
+			},
+			{
+				"id": "regular_job_1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [
+									3.0,
+									3.0
+								],
+								"duration": 900,
+								"times": [
+									[
+										"2024-07-04T08:00:00Z",
+										"2024-07-04T18:00:00Z"
+									]
+								]
+							}
+						],
+						"demand": [
+							3
+						]
+					}
+				]
+			}
+		]
+	},
+	"fleet": {
+		"vehicles": [
+			{
+				"typeId": "technician",
+				"vehicleIds": [
+					"tech_001",
+					"tech_002"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 22.0,
+					"distance": 0.0002,
+					"time": 0.005
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-05T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-05T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-06T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-06T19:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					20
+				]
+			}
+		]
+	}
+}

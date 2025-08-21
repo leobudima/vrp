@@ -1,0 +1,463 @@
+{
+	"plan": {
+		"jobs": [
+			{
+				"id": "emergency_repair_electrical",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									10.0,
+									10.0
+								],
+								"duration": 7200,
+								"times": [
+									[
+										"2024-07-04T09:00:00Z",
+										"2024-07-04T17:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"electrical"
+					]
+				},
+				"sync": {
+					"key": "emergency_site_alpha",
+					"index": 0,
+					"vehicles_required": 3,
+					"tolerance": 300
+				}
+			},
+			{
+				"id": "emergency_repair_mechanical",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									10.0,
+									10.0
+								],
+								"duration": 7200,
+								"times": [
+									[
+										"2024-07-04T09:00:00Z",
+										"2024-07-04T17:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"mechanical"
+					]
+				},
+				"sync": {
+					"key": "emergency_site_alpha",
+					"index": 1,
+					"vehicles_required": 3,
+					"tolerance": 300
+				}
+			},
+			{
+				"id": "emergency_repair_safety",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									10.0,
+									10.0
+								],
+								"duration": 7200,
+								"times": [
+									[
+										"2024-07-04T09:00:00Z",
+										"2024-07-04T17:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"safety"
+					]
+				},
+				"sync": {
+					"key": "emergency_site_alpha",
+					"index": 2,
+					"vehicles_required": 3,
+					"tolerance": 300
+				}
+			},
+			{
+				"id": "installation_plumbing",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									15.0,
+									5.0
+								],
+								"duration": 5400,
+								"times": [
+									[
+										"2024-07-04T10:00:00Z",
+										"2024-07-04T16:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"plumbing"
+					]
+				},
+				"sync": {
+					"key": "complex_installation_site_beta",
+					"index": 0,
+					"vehicles_required": 2,
+					"tolerance": 600
+				}
+			},
+			{
+				"id": "installation_hvac",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									15.0,
+									5.0
+								],
+								"duration": 5400,
+								"times": [
+									[
+										"2024-07-04T10:00:00Z",
+										"2024-07-04T16:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"hvac"
+					]
+				},
+				"sync": {
+					"key": "complex_installation_site_beta",
+					"index": 1,
+					"vehicles_required": 2,
+					"tolerance": 600
+				}
+			},
+			{
+				"id": "regular_maintenance_1",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									5.0,
+									8.0
+								],
+								"duration": 1800,
+								"times": [
+									[
+										"2024-07-04T08:00:00Z",
+										"2024-07-04T18:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"general"
+					]
+				}
+			},
+			{
+				"id": "regular_maintenance_2",
+				"services": [
+					{
+						"places": [
+							{
+								"location": [
+									2.0,
+									12.0
+								],
+								"duration": 2400,
+								"times": [
+									[
+										"2024-07-04T09:00:00Z",
+										"2024-07-04T17:00:00Z"
+									]
+								]
+							}
+						]
+					}
+				],
+				"skills": {
+					"allOf": [
+						"general"
+					]
+				}
+			}
+		]
+	},
+	"fleet": {
+		"vehicles": [
+			{
+				"typeId": "electrical_specialist",
+				"vehicleIds": [
+					"elec_001"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 50.0,
+					"distance": 0.0003,
+					"time": 0.008
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					10
+				],
+				"skills": [
+					"electrical",
+					"general"
+				]
+			},
+			{
+				"typeId": "mechanical_specialist",
+				"vehicleIds": [
+					"mech_001"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 45.0,
+					"distance": 0.0003,
+					"time": 0.007
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					15
+				],
+				"skills": [
+					"mechanical",
+					"general"
+				]
+			},
+			{
+				"typeId": "safety_specialist",
+				"vehicleIds": [
+					"safety_001"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 40.0,
+					"distance": 0.0002,
+					"time": 0.006
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					5
+				],
+				"skills": [
+					"safety",
+					"general"
+				]
+			},
+			{
+				"typeId": "plumbing_specialist",
+				"vehicleIds": [
+					"plumb_001"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 35.0,
+					"distance": 0.0002,
+					"time": 0.005
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					20
+				],
+				"skills": [
+					"plumbing",
+					"general"
+				]
+			},
+			{
+				"typeId": "hvac_specialist",
+				"vehicleIds": [
+					"hvac_001"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 38.0,
+					"distance": 0.0002,
+					"time": 0.006
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					18
+				],
+				"skills": [
+					"hvac",
+					"general"
+				]
+			},
+			{
+				"typeId": "general_technician",
+				"vehicleIds": [
+					"gen_001",
+					"gen_002"
+				],
+				"profile": {
+					"matrix": "car"
+				},
+				"costs": {
+					"fixed": 25.0,
+					"distance": 0.0002,
+					"time": 0.004
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [
+								0.0,
+								0.0
+							],
+							"latest": "2024-07-04T18:00:00Z"
+						}
+					}
+				],
+				"capacity": [
+					12
+				],
+				"skills": [
+					"general"
+				]
+			}
+		]
+	}
+}
