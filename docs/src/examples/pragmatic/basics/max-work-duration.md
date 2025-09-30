@@ -1,24 +1,23 @@
 # Maximum Work Duration
 
-This example demonstrates how to use the `maxWorkDuration` limit to control the maximum amount of time vehicles can spend on actual service work, separate from travel time, waiting time, and breaks.
+This example demonstrates how to use the `maxWorkDuration` limit to control the maximum amount of time vehicles can spend on a route, measured from arrival at the first job to departure from the last job.
 
 ## Problem
 
 In this scenario, we have:
 
--   **Limited Technicians**: Field technicians with 6-hour daily work limits due to labor regulations
--   **Unlimited Technician**: Senior technician without work duration restrictions but higher cost
--   **Service Calls**: Various duration service calls that need to be efficiently scheduled
+-   **Limited Technicians**: Field technicians with 8-hour work duration limits due to labor regulations.
+-   **Unlimited Technician**: Senior technician without work duration restrictions but at a higher cost.
+-   **Service Calls**: Various service calls that need to be efficiently scheduled.
 
 ## Use Case
 
 Maximum work duration limits are important for:
 
--   **Labor regulations**: Compliance with maximum allowable working hours per shift
--   **Union agreements**: Contractual limitations on billable hours
--   **Service capacity**: Ensuring technicians maintain productive time ratios
--   **Cost control**: Managing overtime and premium hour costs
--   **Work-life balance**: Preventing technician burnout through reasonable work limits
+-   **Labor regulations**: Compliance with maximum allowable working hours per shift.
+-   **Union agreements**: Contractual limitations on total on-the-job time.
+-   **Cost control**: Managing overtime and ensuring efficient use of driver time.
+-   **Work-life balance**: Preventing technician burnout by limiting the span of the workday.
 
 ## Sample
 
@@ -33,72 +32,44 @@ Maximum work duration limits are important for:
 
 ## Key Features
 
-### Work Duration vs Total Duration
+### Work Duration vs. Total Duration
+
+`maxWorkDuration` provides a way to limit the duration of work-related activities, separate from the total time the vehicle is on the road.
 
 ```json
 "limits": {
-  "maxDuration": 36000,        // 10 hours total (travel + work + waiting + breaks)
-  "maxWorkDuration": 21600     // 6 hours actual customer service work
+  "maxDuration": 36000,        // 10 hours total shift time (includes everything)
+  "maxWorkDuration": 28800     // 8 hours of work duration
 }
 ```
 
--   **maxDuration**: Total time from depot departure to return (includes everything)
--   **maxWorkDuration**: Only time spent on job service activities (excludes travel/waiting)
+-   **maxDuration**: Total time from depot departure to depot return. This includes the initial travel to the first job and the final travel from the last job.
+-   **maxWorkDuration**: The duration from arrival at the first job to departure from the last job. This includes all service times, travel between jobs, waiting times, and any breaks taken during the workday. It excludes the initial and final travel segments to and from the depot.
 
 ### Vehicle Type Comparison
 
 **Limited Technicians:**
 
 -   Lower fixed cost ($100)
--   6-hour work limit
--   Can work 10 hours total (4 hours for travel/breaks)
+-   8-hour work duration limit.
 
 **Unlimited Technician:**
 
 -   Higher fixed cost ($120)
--   No work duration limit
--   Can work up to 10 hours total duration
-
-## Service Time Calculation
-
-In the example, service calls have durations:
-
--   Service call 1: 3600 seconds (1 hour)
--   Service call 2: 2400 seconds (40 minutes)
--   Service call 3: 1800 seconds (30 minutes)
--   Service call 4: 2700 seconds (45 minutes)
--   Service call 5: 3300 seconds (55 minutes)
--   Service call 6: 1500 seconds (25 minutes)
--   Service call 7: 2100 seconds (35 minutes)
--   Service call 8: 2850 seconds (47.5 minutes)
-
-Total service time: 20,250 seconds ≈ 5.6 hours
+-   No work duration limit.
 
 ## Expected Behavior
 
 The solver will:
 
-1. **Respect Work Limits**: Limited technicians won't exceed 6 hours of actual service time
-2. **Cost Optimization**: Use limited technicians when possible due to lower fixed costs
-3. **Overflow Handling**: Assign excess work to unlimited technician when work limits are reached
-4. **Efficient Routing**: Minimize travel time to maximize productive work within limits
-
-## Possible Solutions
-
-**Scenario 1 - Within Limits:**
-
--   Limited technicians handle most jobs (staying under 6-hour work limit)
--   Unlimited technician handles overflow or provides more efficient routing
-
-**Scenario 2 - Exceeds Limits:**
-
--   Some jobs assigned to unlimited technician due to work duration constraints
--   Balance between using cheaper limited resources and maintaining compliance
+1.  **Respect Work Duration Limits**: A limited technician's tour will not exceed 8 hours from the arrival at their first job to the departure from their last.
+2.  **Cost Optimization**: Use the cheaper, limited technicians whenever their `maxWorkDuration` is not violated.
+3.  **Overflow Handling**: Assign jobs to the more expensive, unlimited technician if the work duration would exceed the limit for the regular technicians.
+4.  **Efficient Routing**: Minimize travel time to fit more work within the allowed duration.
 
 ## Benefits
 
--   **Regulatory Compliance**: Ensures adherence to labor laws and union agreements
--   **Cost Control**: Optimizes use of lower-cost limited resources when possible
--   **Flexibility**: Provides escape valve through unlimited resources for peak demand
--   **Quality Assurance**: Prevents technician fatigue through reasonable work limits
--   **Transparency**: Clear separation between productive work time and total shift time
+-   **Regulatory Compliance**: Ensures adherence to labor laws regarding the length of the workday.
+-   **Cost Control**: Optimizes the use of resources based on their cost and time constraints.
+-   **Flexibility**: Allows for different rules for different classes of vehicles or drivers.
+-   **Transparency**: Provides a clear distinction between the total shift time and the productive work-related time.

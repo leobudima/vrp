@@ -138,7 +138,9 @@ fn check_recharge_limits(context: &CheckerContext) -> GenericResult<()> {
     })
 }
 
-/// Calculate work duration from a tour (first job arrival to last job departure).
+/// Calculates work duration from a tour as a difference between arrival to the first job
+/// and departure from the last job. This duration includes all travel, service, waiting, and
+/// break times between the first and last activities.
 fn calculate_work_duration_from_tour(tour: &crate::format::solution::Tour) -> GenericResult<Float> {
     // Find all job activities (excluding depot start/end activities)
     let job_stops: Vec<_> = tour.stops

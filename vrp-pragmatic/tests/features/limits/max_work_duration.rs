@@ -82,8 +82,9 @@ fn can_skip_jobs_when_work_duration_exceeds_limit() {
 
 #[test]
 fn work_duration_limit_does_not_include_depot_travel() {
-    // Test that work duration only includes time from first job arrival to last job departure
-    // Travel from depot to first job and from last job to depot should be excluded
+    // Test that work duration is calculated from arrival at the first job to departure from the last job.
+    // This duration includes all travel, service, waiting, and break times between the first and last activities.
+    // Travel from the depot to the first job and from the last job to the depot should be excluded.
     let problem = Problem {
         plan: Plan { 
             jobs: vec![create_delivery_job_with_duration("job1", (10., 0.), 10.)],

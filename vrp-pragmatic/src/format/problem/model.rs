@@ -570,8 +570,10 @@ pub struct VehicleLimits {
     #[serde(alias = "shiftTime")]
     pub max_duration: Option<Float>,
 
-    /// Max work duration per tour (from arrival at first job until completion of last job).
-    /// Excludes travel from start location to first job and from last job to end location.
+    /// Max work duration per tour: a duration from arrival at the first job-related
+    /// activity until departure from the last job-related activity. It includes all travel,
+    /// service, waiting, and break times between the first and last activities. It excludes
+    /// travel from the start location to the first job and from the last job to the end location.
     /// No work duration restrictions when omitted.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_work_duration: Option<Float>,
