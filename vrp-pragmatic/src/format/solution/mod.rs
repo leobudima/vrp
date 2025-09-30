@@ -86,8 +86,8 @@ fn map_code_reason(code: ViolationCode) -> (&'static str, &'static str) {
         DURATION_LIMIT_CONSTRAINT_CODE => {
             ("MAX_DURATION_CONSTRAINT", "cannot be assigned due to max duration constraint of vehicle")
         }
-        WORK_DURATION_LIMIT_CONSTRAINT_CODE => {
-            ("WORK_DURATION_CONSTRAINT", "cannot be assigned due to work duration constraint of vehicle")
+        ACTIVITY_DURATION_CONSTRAINT_CODE => {
+            ("ACTIVITY_DURATION_CONSTRAINT", "cannot be assigned due to max activity duration constraint of vehicle")
         }
         BREAK_CONSTRAINT_CODE => ("BREAK_CONSTRAINT", "break is not assignable"),
         LOCKING_CONSTRAINT_CODE => ("LOCKING_CONSTRAINT", "cannot be served due to relation lock"),
@@ -117,7 +117,7 @@ fn map_reason_code(reason: &str) -> ViolationCode {
         "REACHABLE_CONSTRAINT" => REACHABLE_CONSTRAINT_CODE,
         "MAX_DISTANCE_CONSTRAINT" => DISTANCE_LIMIT_CONSTRAINT_CODE,
         "MAX_DURATION_CONSTRAINT" => DURATION_LIMIT_CONSTRAINT_CODE,
-        "WORK_DURATION_CONSTRAINT" => WORK_DURATION_LIMIT_CONSTRAINT_CODE,
+        "ACTIVITY_DURATION_CONSTRAINT" => ACTIVITY_DURATION_CONSTRAINT_CODE,
         "BREAK_CONSTRAINT" => BREAK_CONSTRAINT_CODE,
         "LOCKING_CONSTRAINT" => LOCKING_CONSTRAINT_CODE,
         "AREA_CONSTRAINT" => AREA_CONSTRAINT_CODE,

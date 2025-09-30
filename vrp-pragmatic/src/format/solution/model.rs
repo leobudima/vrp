@@ -37,6 +37,12 @@ pub struct Statistic {
     pub distance: i64,
     /// Total duration.
     pub duration: i64,
+    /// Activity duration.
+    #[serde(default = "i64::default")]
+    pub activity_duration: i64,
+    /// Activity distance.
+    #[serde(default = "i64::default")]
+    pub activity_distance: i64,
     /// Timing statistic.
     pub times: Timing,
 }

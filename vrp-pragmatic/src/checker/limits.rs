@@ -53,12 +53,12 @@ fn check_shift_limits(context: &CheckerContext) -> GenericResult<()> {
                 }
             }
 
-            if let Some(max_work_duration) = limits.max_work_duration {
-                let work_duration = calculate_work_duration_from_tour(tour)?;
-                if work_duration > max_work_duration {
+            if let Some(max_activity_duration) = limits.max_activity_duration {
+                let activity_duration = calculate_activity_duration_from_tour(tour)?;
+                if activity_duration > max_activity_duration {
                     return Err(format!(
-                        "work duration limit violation, expected: not more than {}, got: {}, vehicle id '{}', shift index: {}",
-                        max_work_duration, work_duration, tour.vehicle_id, tour.shift_index
+                        "activity duration limit violation, expected: not more than {}, got: {}, vehicle id '{}', shift index: {}",
+                        max_activity_duration, activity_duration, tour.vehicle_id, tour.shift_index
                     ).into());
                 }
             }
@@ -138,10 +138,10 @@ fn check_recharge_limits(context: &CheckerContext) -> GenericResult<()> {
     })
 }
 
-/// Calculates work duration from a tour as a difference between arrival to the first job
+/// Calculates activity duration from a tour as a difference between arrival to the first job
 /// and departure from the last job. This duration includes all travel, service, waiting, and
 /// break times between the first and last activities.
-fn calculate_work_duration_from_tour(tour: &crate::format::solution::Tour) -> GenericResult<Float> {
+fn calculate_activity_duration_from_tour(tour: &crate::format::solution::Tour) -> GenericResult<Float> {
     // Find all job activities (excluding depot start/end activities)
     let job_stops: Vec<_> = tour.stops
         .iter()

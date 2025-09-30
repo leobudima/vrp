@@ -9,6 +9,8 @@ impl Add for Statistic {
             cost: self.cost + rhs.cost,
             distance: self.distance + rhs.distance,
             duration: self.duration + rhs.duration,
+            activity_duration: self.activity_duration + rhs.activity_duration,
+            activity_distance: self.activity_distance + rhs.activity_distance,
             times: Timing {
                 driving: self.times.driving + rhs.times.driving,
                 serving: self.times.serving + rhs.times.serving,

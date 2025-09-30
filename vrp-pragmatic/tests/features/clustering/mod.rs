@@ -96,6 +96,8 @@ fn create_statistic(data: (Float, i64, i64, (i64, i64, i64, i64))) -> Statistic 
         cost: data.0,
         distance: data.1,
         duration: data.2,
+        activity_distance: data.1,
+        activity_duration: data.2,
         times: Timing {
             driving: data.3.0,
             serving: data.3.1,

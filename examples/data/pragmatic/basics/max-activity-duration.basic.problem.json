@@ -194,7 +194,7 @@
 				],
 				"limits": {
 					"maxDuration": 36000,
-					"maxWorkDuration": 21600
+					"maxActivityDuration": 21600
 				}
 			},
 			{

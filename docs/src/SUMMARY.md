@@ -45,7 +45,7 @@
             -   [Multi day plan](examples/pragmatic/basics/multi-day.md)
             -   [Job affinity](examples/pragmatic/basics/affinity.md)
             -   [Synchronized jobs](examples/pragmatic/basics/sync-jobs.md)
-            -   [Max work duration](examples/pragmatic/basics/max-work-duration.md)
+            -   [Max activity duration](examples/pragmatic/basics/max-activity-duration.md)
             -   [Vehicle break](examples/pragmatic/basics/break.md)
             -   [Multiple trips](examples/pragmatic/basics/reload.md)
             -   [Recharge stations](examples/pragmatic/basics/recharge.md)

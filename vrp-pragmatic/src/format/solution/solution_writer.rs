@@ -6,7 +6,7 @@ use crate::format::CoordIndex;
 use crate::format::solution::activity_matcher::get_job_tag;
 use crate::format::solution::model::Timing;
 use crate::format::solution::*;
-use vrp_core::construction::enablers::{ReservedTimesIndex, get_route_intervals};
+use vrp_core::construction::enablers::{get_route_intervals, ReservedTimesIndex};
 use vrp_core::construction::features::JobDemandDimension;
 use vrp_core::construction::heuristics::UnassignmentInfo;
 use vrp_core::models::common::*;
@@ -263,6 +263,8 @@ fn create_tour(
                         cost: leg.statistic.cost + total_cost,
                         distance,
                         duration: leg.statistic.duration + act.schedule.departure as i64 - prev_departure as i64,
+                        activity_duration: 0,
+                        activity_distance: 0,
                         times: Timing {
                             driving: leg.statistic.times.driving + driving as i64,
                             serving: leg.statistic.times.serving + (if is_break { 0 } else { serving as i64 }),
@@ -286,6 +288,42 @@ fn create_tour(
     tour.statistic = leg.statistic;
 
     insert_reserved_times_as_breaks(route, &mut tour, reserved_times_index);
+
+    let mut first_job_arrival: Option<Timestamp> = None;
+    let mut first_job_distance: Option<i64> = None;
+    let mut last_job_departure: Option<Timestamp> = None;
+    let mut last_job_distance: Option<i64> = None;
+
+    for stop in &tour.stops {
+        if let Stop::Point(point_stop) = stop {
+            for activity in &point_stop.activities {
+                let is_job = match activity.activity_type.as_str() {
+                    "pickup" | "delivery" | "replacement" | "service" => true,
+                    _ => false,
+                };
+
+                if is_job {
+                    let arrival = parse_time(activity.time.as_ref().unwrap().start.as_str());
+                    let departure = parse_time(activity.time.as_ref().unwrap().end.as_str());
+
+                    if first_job_arrival.is_none() {
+                        first_job_arrival = Some(arrival);
+                        first_job_distance = Some(point_stop.distance);
+                    }
+
+                    last_job_departure = Some(departure);
+                    last_job_distance = Some(point_stop.distance);
+                }
+            }
+        }
+    }
+
+    if let (Some(first_arrival), Some(first_distance), Some(last_departure), Some(last_distance)) =
+        (first_job_arrival, first_job_distance, last_job_departure, last_job_distance)
+    {
+        tour.statistic.activity_duration = (last_departure - first_arrival) as i64;
+        tour.statistic.activity_distance = last_distance - first_distance;
+    }
 
     // NOTE remove redundant info from single activity on the stop
     tour.stops

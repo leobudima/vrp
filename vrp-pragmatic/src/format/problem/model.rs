@@ -556,7 +556,7 @@ pub struct VehicleRecharges {
 pub type VehicleRechargeStation = JobPlace;
 
 /// Vehicle limits.
-#[derive(Clone, Deserialize, Debug, Serialize)]
+#[derive(Clone, Deserialize, Debug, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct VehicleLimits {
     /// Max traveling distance per shift/tour.
@@ -570,13 +570,13 @@ pub struct VehicleLimits {
     #[serde(alias = "shiftTime")]
     pub max_duration: Option<Float>,
 
-    /// Max work duration per tour: a duration from arrival at the first job-related
+    /// Max activity duration per tour: a duration from arrival at the first job-related
     /// activity until departure from the last job-related activity. It includes all travel,
     /// service, waiting, and break times between the first and last activities. It excludes
     /// travel from the start location to the first job and from the last job to the end location.
-    /// No work duration restrictions when omitted.
+    /// No activity duration restrictions when omitted.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_work_duration: Option<Float>,
+    pub max_activity_duration: Option<Float>,
 
     /// Max amount job activities.
     /// No job activities restrictions when omitted.

@@ -183,7 +183,7 @@ impl IntoIterator for MultiFormatError {
 const TIME_CONSTRAINT_CODE: ViolationCode = ViolationCode(1);
 const DISTANCE_LIMIT_CONSTRAINT_CODE: ViolationCode = ViolationCode(2);
 const DURATION_LIMIT_CONSTRAINT_CODE: ViolationCode = ViolationCode(3);
-const WORK_DURATION_LIMIT_CONSTRAINT_CODE: ViolationCode = ViolationCode(17);
+const ACTIVITY_DURATION_CONSTRAINT_CODE: ViolationCode = ViolationCode(17);
 const CAPACITY_CONSTRAINT_CODE: ViolationCode = ViolationCode(4);
 const BREAK_CONSTRAINT_CODE: ViolationCode = ViolationCode(5);
 const SKILL_CONSTRAINT_CODE: ViolationCode = ViolationCode(6);

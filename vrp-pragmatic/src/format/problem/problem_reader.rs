@@ -156,7 +156,7 @@ fn get_problem_properties(api_problem: &ApiProblem, matrices: &[Matrix]) -> Prob
         .fleet
         .vehicles
         .iter()
-        .any(|v| v.limits.as_ref().is_some_and(|l| l.max_duration.or(l.max_distance).or(l.max_work_duration).is_some()));
+        .any(|v| v.limits.as_ref().is_some_and(|l| l.max_duration.or(l.max_distance).or(l.max_activity_duration).is_some()));
 
     let has_sync = api_problem.plan.jobs.iter().any(|job| job.sync.is_some());
 

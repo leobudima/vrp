@@ -33,6 +33,8 @@ fn can_handle_limited_capacity() {
             cost: 88.,
             distance: 36,
             duration: 42,
+            activity_distance: 36,
+            activity_duration: 42,
             times: Timing { driving: 36, serving: 6, ..Timing::default() },
         }
     );

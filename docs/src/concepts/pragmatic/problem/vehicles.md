@@ -84,7 +84,7 @@ Both `time` and `distance` costs can be specified as either fixed values or tier
 -   **limits** (optional): vehicle limits. Available options:
     -   **maxDuration** (optional): max tour duration (including travel, service, waiting, and break times)
     -   **maxDistance** (optional): max tour distance
-    -   **maxWorkDuration** (optional): max work duration (service time only, excluding travel and waiting)
+    -   **maxActivityDuration** (optional): max work duration (service time only, excluding travel and waiting)
     -   **tourSize** (optional): max amount of activities in the tour (without departure/arrival). Please note, that
         clustered activities are counted as one in case of vicinity clustering.
 
@@ -145,19 +145,19 @@ Each shift can have the following properties:
 -   **recharges** (optional, experimental) specifies recharging stations and max distance limit before recharge should happen.
     See examples [here](../../../examples/pragmatic/basics/recharge.md).
 
-## Work Duration Limits
+## Activity Duration Limits
 
-The `maxWorkDuration` limit allows you to control the maximum amount of time a vehicle can spend actively working (serving customers),
+The `maxActivityDuration` limit allows you to control the maximum amount of time a vehicle can spend actively working (serving customers),
 separate from travel time, waiting time, and breaks. This is useful for modeling:
 
 -   **Labor regulations**: Maximum allowable working hours per shift
 -   **Service capacity**: Technician availability for actual work
 -   **Productivity targets**: Ensuring vehicles maintain productive time ratios
 
-### Work Duration vs Total Duration
+### Activity Duration vs Total Duration
 
 -   **maxDuration**: Total time from start to end of tour (travel + work + waiting + breaks)
--   **maxWorkDuration**: Only the time spent on actual job service activities
+-   **maxActivityDuration**: Only the time spent on actual job service activities
 
 ### Example
 
@@ -173,10 +173,11 @@ separate from travel time, waiting time, and breaks. This is useful for modeling
 			"end": { "location": [0.0, 0.0], "latest": "2023-07-04T18:00:00Z" }
 		}
 	],
+
 	"capacity": [100],
 	"limits": {
 		"maxDuration": 28800, // 8 hours total tour time
-		"maxWorkDuration": 21600 // 6 hours actual work time
+		"maxActivityDuration": 21600 // 6 hours actual work time
 	}
 }
 ```

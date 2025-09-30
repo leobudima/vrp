@@ -14,7 +14,7 @@ fn create_test_problem() -> Problem {
 }
 
 fn create_test_statistic() -> Statistic {
-    Statistic { cost: 10., distance: 4, duration: 6, times: Timing { driving: 4, serving: 2, ..Timing::default() } }
+    Statistic { cost: 10., distance: 4, duration: 6, activity_distance: 4, activity_duration: 6, times: Timing { driving: 4, serving: 2, ..Timing::default() } }
 }
 
 fn create_test_solution(statistic: Statistic, stop_data: &[(Float, i64); 3]) -> Solution {

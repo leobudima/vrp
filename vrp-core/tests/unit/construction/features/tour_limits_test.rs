@@ -99,10 +99,10 @@ mod traveling {
             TestActivityCost::new_shared(),
             DISTANCE_CODE,
             DURATION_CODE,
-            ViolationCode(4), // WORK_DURATION_CODE
+            ViolationCode(4), // ACTIVITY_DURATION_CODE
             tour_distance_limit,
             tour_duration_limit,
-            Arc::new(|_| None), // tour_work_duration_limit
+            Arc::new(|_| None), // tour_activity_duration_limit
         )
         .unwrap();
 
@@ -186,7 +186,7 @@ mod notify_failure {
                     None
                 }
             }),
-            tour_work_duration_limit_fn: Arc::new(|_| None),
+            tour_activity_duration_limit_fn: Arc::new(|_| None),
             transport: TestTransportCost::new_shared(),
             activity: TestActivityCost::new_shared(),
         }

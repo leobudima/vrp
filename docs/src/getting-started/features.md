@@ -63,9 +63,9 @@ list describes common VRP variations supported by the project:
     essential for team-based operations, emergency repairs, and safety-critical tasks.
     See [synchronized jobs](../examples/pragmatic/basics/sync-jobs.md) example.
 
--   **VRP with Work Duration Limits (VRPWDL)**: controls maximum productive work time separate from total shift duration,
+-   **VRP with Activity Duration Limits (VRPADL)**: controls maximum productive activity time separate from total shift duration,
     supporting labor regulations and billable hour management.
-    See [max work duration](../examples/pragmatic/basics/max-work-duration.md) example.
+    See [max activity duration](../examples/pragmatic/basics/max-activity-duration.md) example.
 
 -   **Traveling Salesman Problem (TSP)**: this is a specific case of VRP when there is only one vehicle.
 
