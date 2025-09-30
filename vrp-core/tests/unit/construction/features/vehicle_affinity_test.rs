@@ -157,3 +157,6 @@ fn can_assign_jobs_without_affinity_to_any_vehicle() {
 
     assert!(result.is_none());
 }
+
+// Include comprehensive tests
+include!("vehicle_affinity_comprehensive_test.rs");
