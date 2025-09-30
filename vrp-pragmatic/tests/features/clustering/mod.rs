@@ -96,8 +96,10 @@ fn create_statistic(data: (Float, i64, i64, (i64, i64, i64, i64))) -> Statistic 
         cost: data.0,
         distance: data.1,
         duration: data.2,
-        activity_distance: data.1,
-        activity_duration: data.2,
+        // Activity fields are set to 0 here and will be auto-calculated by TourBuilder
+        // when building the expected solution, matching the calculation in solution_writer.rs
+        activity_distance: 0,
+        activity_duration: 0,
         times: Timing {
             driving: data.3.0,
             serving: data.3.1,

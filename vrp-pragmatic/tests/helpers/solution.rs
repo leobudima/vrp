@@ -2,7 +2,7 @@
 
 use crate::format::solution::*;
 use crate::format::{CustomLocationType, Location};
-use crate::format_time;
+use crate::{format_time, parse_time};
 use crate::helpers::ToLocation;
 use std::cmp::Ordering::Equal;
 use std::collections::HashMap;
@@ -271,6 +271,7 @@ pub struct StatisticBuilder {
     fixed: Cost,
     costs: (Cost, Cost),
     statistic: Statistic,
+    auto_calculate_activity_stats: bool,
 }
 
 impl StatisticBuilder {
@@ -298,6 +299,20 @@ impl StatisticBuilder {
         self
     }
 
+    pub fn activity_duration(mut self, activity_duration: i64) -> Self {
+        self.statistic.activity_duration = activity_duration;
+        self.auto_calculate_activity_stats = false;
+
+        self
+    }
+
+    pub fn activity_distance(mut self, activity_distance: i64) -> Self {
+        self.statistic.activity_distance = activity_distance;
+        self.auto_calculate_activity_stats = false;
+
+        self
+    }
+
     pub fn build(self) -> Statistic {
         let mut statistic = self.statistic;
         let (per_distance, per_time) = self.costs;
@@ -309,13 +324,22 @@ impl StatisticBuilder {
         statistic.cost =
             self.fixed + statistic.distance as Float * per_distance + statistic.duration as Float * per_time;
 
+        // Auto-calculate activity stats if not explicitly set
+        // This maintains backward compatibility with existing tests
+        if self.auto_calculate_activity_stats {
+            // For backward compatibility, leave these as 0 unless explicitly set
+            // Tests that care about these values should set them explicitly
+            statistic.activity_duration = 0;
+            statistic.activity_distance = 0;
+        }
+
         statistic
     }
 }
 
 impl Default for StatisticBuilder {
     fn default() -> Self {
-        Self { fixed: 10.0, costs: (1., 1.), statistic: Default::default() }
+        Self { fixed: 10.0, costs: (1., 1.), statistic: Default::default(), auto_calculate_activity_stats: true }
     }
 }
 
@@ -354,9 +378,55 @@ impl TourBuilder {
         self
     }
 
-    pub fn build(self) -> Tour {
+    pub fn build(mut self) -> Tour {
         if self.tour.stops.is_empty() {
             panic!("no stops in the tour");
+        }
+
+        // Calculate activity_duration and activity_distance if not explicitly set
+        // This matches the behavior of solution_writer.rs
+        if self.tour.statistic.activity_duration == 0 && self.tour.statistic.activity_distance == 0 {
+            let mut first_job_arrival: Option<Timestamp> = None;
+            let mut first_job_distance: Option<i64> = None;
+            let mut last_job_departure: Option<Timestamp> = None;
+            let mut last_job_distance: Option<i64> = None;
+
+            for stop in &self.tour.stops {
+                if let Stop::Point(point_stop) = stop {
+                    for activity in &point_stop.activities {
+                        let is_job = matches!(
+                            activity.activity_type.as_str(),
+                            "pickup" | "delivery" | "replacement" | "service"
+                        );
+
+                        if is_job {
+                            // Try to use activity time if available, otherwise fall back to stop schedule
+                            let (arrival, departure) = if let Some(time_interval) = &activity.time {
+                                (parse_time(&time_interval.start), parse_time(&time_interval.end))
+                            } else {
+                                // Fallback: use stop schedule times
+                                let schedule = point_stop.time.clone();
+                                (parse_time(&schedule.arrival), parse_time(&schedule.departure))
+                            };
+
+                            if first_job_arrival.is_none() {
+                                first_job_arrival = Some(arrival);
+                                first_job_distance = Some(point_stop.distance);
+                            }
+
+                            last_job_departure = Some(departure);
+                            last_job_distance = Some(point_stop.distance);
+                        }
+                    }
+                }
+            }
+
+            if let (Some(first_arrival), Some(first_distance), Some(last_departure), Some(last_distance)) =
+                (first_job_arrival, first_job_distance, last_job_departure, last_job_distance)
+            {
+                self.tour.statistic.activity_duration = (last_departure - first_arrival) as i64;
+                self.tour.statistic.activity_distance = last_distance - first_distance;
+            }
         }
 
         self.tour

@@ -96,7 +96,10 @@ fn can_merge_activities_with_same_location_in_one_stop() {
             cost: 32.,
             distance: 10,
             duration: 12,
+            activity_duration: 2,
+            activity_distance: 0,
             times: Timing { driving: 10, serving: 2, ..Timing::default() },
+            ..Statistic::default()
         }
     );
     assert_eq!(solution.tours.len(), 1);

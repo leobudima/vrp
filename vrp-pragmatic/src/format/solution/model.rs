@@ -38,13 +38,17 @@ pub struct Statistic {
     /// Total duration.
     pub duration: i64,
     /// Activity duration.
-    #[serde(default = "i64::default")]
+    #[serde(default, skip_serializing_if = "is_zero_i64")]
     pub activity_duration: i64,
     /// Activity distance.
-    #[serde(default = "i64::default")]
+    #[serde(default, skip_serializing_if = "is_zero_i64")]
     pub activity_distance: i64,
     /// Timing statistic.
     pub times: Timing,
+}
+
+fn is_zero_i64(value: &i64) -> bool {
+    *value == 0
 }
 
 /// Represents a schedule.
