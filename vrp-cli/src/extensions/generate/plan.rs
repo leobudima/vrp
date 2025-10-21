@@ -70,6 +70,7 @@ pub(crate) fn generate_plan(
                 group: job_proto.group.clone(),
                 compatibility: job_proto.compatibility.clone(),
                 affinity: job_proto.affinity.clone(),
+                same_assignee_key: job_proto.same_assignee_key.clone(),
                 sync: job_proto.sync.clone(),
             }
         })

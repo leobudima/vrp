@@ -155,6 +155,10 @@ pub struct Job {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub affinity: Option<AffinityInfo>,
 
+    /// Same assignee key: jobs with same key are assigned to the same vehicle across routes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub same_assignee_key: Option<String>,
+
     /// Job synchronization: requires multiple vehicles to work on the same job simultaneously.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sync: Option<JobSync>,

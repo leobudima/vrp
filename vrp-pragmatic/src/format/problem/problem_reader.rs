@@ -149,6 +149,7 @@ fn get_problem_properties(api_problem: &ApiProblem, matrices: &[Matrix]) -> Prob
     let has_value = api_problem.plan.jobs.iter().filter_map(|job| job.value).any(|value| value != 0.);
     let has_compatibility = api_problem.plan.jobs.iter().any(|job| job.compatibility.is_some());
     let has_affinity = api_problem.plan.jobs.iter().any(|job| job.affinity.is_some());
+    let has_same_assignee = api_problem.plan.jobs.iter().any(|job| job.same_assignee_key.is_some());
     let has_tour_size_limits =
         api_problem.fleet.vehicles.iter().any(|v| v.limits.as_ref().is_some_and(|l| l.tour_size.is_some()));
 
@@ -172,6 +173,7 @@ fn get_problem_properties(api_problem: &ApiProblem, matrices: &[Matrix]) -> Prob
         has_value,
         has_compatibility,
         has_affinity,
+        has_same_assignee,
         has_tour_size_limits,
         has_tour_travel_limits,
         has_sync,

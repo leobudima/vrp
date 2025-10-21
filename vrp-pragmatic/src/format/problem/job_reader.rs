@@ -8,7 +8,7 @@ use std::sync::Arc;
 use vrp_core::{
     construction::features::{
         BreakPolicy, JobAffinityDimension, JobAffinitySequenceDimension, JobAffinityDurationDaysDimension, JobCompatibilityDimension, JobDemandDimension, JobGroupDimension, JobSkills as FeatureJobSkills,
-        JobSkillsDimension, JobSyncGroupDimension, JobSyncIndexDimension, JobSyncSizeDimension, JobSyncToleranceDimension,
+        JobSameAssigneeKeyDimension, JobSkillsDimension, JobSyncGroupDimension, JobSyncIndexDimension, JobSyncSizeDimension, JobSyncToleranceDimension,
     },
     models::common::*,
     models::problem::{
@@ -429,6 +429,10 @@ fn fill_dimens(job: &ApiJob, dimens: &mut Dimensions) {
         dimens.set_job_affinity(affinity.key);
         dimens.set_job_affinity_sequence(affinity.sequence);
         dimens.set_job_affinity_duration_days(affinity.duration_days);
+    }
+
+    if let Some(assignee_key) = job.same_assignee_key.clone() {
+        dimens.set_job_same_assignee_key(assignee_key);
     }
 
     if let Some(sync) = job.sync.clone() {

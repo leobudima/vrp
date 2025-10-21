@@ -58,6 +58,10 @@ pub(super) fn create_goal_context(
         features.push(create_vehicle_affinity_feature("affinity", AFFINITY_CONSTRAINT_CODE)?);
     }
 
+    if props.has_same_assignee {
+        features.push(create_same_assignee_feature("same_assignee", SAME_ASSIGNEE_CONSTRAINT_CODE)?);
+    }
+
     // Note: sync feature (with objective) is injected above as a layer; no need to add it again here.
 
     if props.has_skills {

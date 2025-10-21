@@ -108,6 +108,7 @@ struct ProblemProperties {
     has_value: bool,
     has_compatibility: bool,
     has_affinity: bool,
+    has_same_assignee: bool,
     has_tour_size_limits: bool,
     has_tour_travel_limits: bool,
     has_sync: bool,

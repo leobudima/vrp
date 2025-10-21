@@ -1,0 +1,148 @@
+{
+	"plan": {
+		"jobs": [
+			{
+				"id": "alice_job1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [1.0, 1.0],
+								"duration": 300,
+								"times": [["2024-07-04T09:00:00Z", "2024-07-04T17:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"same_assignee_key": "technician_alice"
+			},
+			{
+				"id": "alice_job2",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [2.0, 2.0],
+								"duration": 400,
+								"times": [["2024-07-05T09:00:00Z", "2024-07-05T17:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"same_assignee_key": "technician_alice"
+			},
+			{
+				"id": "alice_job3",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [3.0, 3.0],
+								"duration": 350,
+								"times": [["2024-07-06T09:00:00Z", "2024-07-06T17:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"same_assignee_key": "technician_alice"
+			},
+			{
+				"id": "bob_job1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [5.0, 5.0],
+								"duration": 450,
+								"times": [["2024-07-04T10:00:00Z", "2024-07-04T16:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"same_assignee_key": "technician_bob"
+			},
+			{
+				"id": "bob_job2",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [6.0, 6.0],
+								"duration": 500,
+								"times": [["2024-07-05T10:00:00Z", "2024-07-05T16:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"same_assignee_key": "technician_bob"
+			},
+			{
+				"id": "regular_job",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": [4.0, 4.0],
+								"duration": 300,
+								"times": [["2024-07-04T08:00:00Z", "2024-07-04T18:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				]
+			}
+		]
+	},
+	"fleet": {
+		"vehicles": [
+			{
+				"typeId": "technician",
+				"vehicleIds": ["tech_001", "tech_002"],
+				"profile": { "matrix": "car" },
+				"costs": {
+					"fixed": 22.0,
+					"distance": 0.0002,
+					"time": 0.005
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": [0.0, 0.0],
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": [0.0, 0.0],
+							"latest": "2024-07-04T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": [0.0, 0.0],
+							"earliest": "2024-07-05T08:00:00Z"
+						},
+						"end": {
+							"location": [0.0, 0.0],
+							"latest": "2024-07-05T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": [0.0, 0.0],
+							"earliest": "2024-07-06T08:00:00Z"
+						},
+						"end": {
+							"location": [0.0, 0.0],
+							"latest": "2024-07-06T19:00:00Z"
+						}
+					}
+				],
+				"capacity": [10]
+			}
+		]
+	}
+}

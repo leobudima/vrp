@@ -93,6 +93,7 @@ prop_compose! {
             group,
             compatibility,
             affinity: None,
+            same_assignee_key: None,
             sync: None,
         }
     }

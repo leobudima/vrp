@@ -198,6 +198,7 @@ const RELOAD_RESOURCE_CONSTRAINT_CODE: ViolationCode = ViolationCode(14);
 const RECHARGE_CONSTRAINT_CODE: ViolationCode = ViolationCode(15);
 const AFFINITY_CONSTRAINT_CODE: ViolationCode = ViolationCode(16);
 const SYNC_CONSTRAINT_CODE: ViolationCode = ViolationCode(18);
+const SAME_ASSIGNEE_CONSTRAINT_CODE: ViolationCode = ViolationCode(19);
 
 /// An job id to job index.
 pub type JobIndex = HashMap<String, CoreJob>;

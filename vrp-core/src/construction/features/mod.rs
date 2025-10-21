@@ -29,6 +29,9 @@ pub use self::groups::{JobGroupDimension, create_group_feature};
 mod vehicle_affinity;
 pub use self::vehicle_affinity::{JobAffinityDimension, JobAffinitySequenceDimension, JobAffinityDurationDaysDimension, create_vehicle_affinity_feature};
 
+mod same_assignee;
+pub use self::same_assignee::{JobSameAssigneeKeyDimension, create_same_assignee_feature};
+
 mod sync;
 pub use self::sync::{
     JobSyncGroupDimension,
