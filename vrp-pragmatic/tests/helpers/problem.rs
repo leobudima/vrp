@@ -30,6 +30,7 @@ pub fn create_job(id: &str) -> Job {
         affinity: None,
         same_assignee_key: None,
         sync: None,
+        sequence: None,
     }
 }
 

@@ -192,6 +192,7 @@ pub fn validate_jobs(ctx: &ValidationContext) -> Result<(), MultiFormatError> {
         check_e1106_negative_duration(ctx),
         check_e1107_negative_demand(ctx),
         check_sync_groups_consistency(ctx),
+        check_sequence_groups_consistency(ctx),
     ])
     .map_err(From::from)
 }
@@ -256,6 +257,91 @@ fn check_sync_groups_consistency(ctx: &ValidationContext) -> Result<(), FormatEr
         Err(FormatError::new(
             "E1110".to_string(),
             "invalid sync groups".to_string(),
+            errors.join("; "),
+        ))
+    }
+}
+
+/// Checks that sequence groups are complete and consistent.
+fn check_sequence_groups_consistency(ctx: &ValidationContext) -> Result<(), FormatError> {
+    use std::collections::HashMap;
+    let mut groups: HashMap<String, Vec<&Job>> = HashMap::new();
+
+    // Group jobs by sequence key
+    for job in ctx.jobs() {
+        if let Some(seq) = &job.sequence {
+            groups.entry(seq.key.clone()).or_default().push(job);
+        }
+    }
+
+    // Validate each sequence group
+    let mut errors: Vec<String> = Vec::new();
+    for (key, jobs) in groups.iter() {
+        // Check 1: All orders must be sequential from 0
+        let mut orders: Vec<u32> = jobs.iter().map(|j| j.sequence.as_ref().unwrap().order).collect();
+        orders.sort_unstable();
+
+        // Check for duplicates
+        let unique_orders: std::collections::HashSet<_> = orders.iter().collect();
+        if unique_orders.len() != orders.len() {
+            errors.push(format!("sequence '{}' has duplicate order values", key));
+            continue;
+        }
+
+        // Check for sequential ordering from 0
+        let expected: Vec<u32> = (0..orders.len() as u32).collect();
+        if orders != expected {
+            errors.push(format!(
+                "sequence '{}' has gaps or invalid orders: expected 0..{}, found {:?}",
+                key,
+                orders.len() - 1,
+                orders
+            ));
+            continue;
+        }
+
+        // Check 2: Consistent gap parameters across all jobs in sequence
+        let reference = jobs.first().unwrap().sequence.as_ref().unwrap();
+        for job in jobs.iter().skip(1) {
+            let seq = job.sequence.as_ref().unwrap();
+            if seq.days_between_min != reference.days_between_min
+                || seq.days_between_max != reference.days_between_max
+            {
+                errors.push(format!(
+                    "sequence '{}' has inconsistent days_between parameters (job '{}' differs from job '{}')",
+                    key, job.id, jobs.first().unwrap().id
+                ));
+                break;
+            }
+        }
+
+        // Check 3: Validate min <= max
+        let min = reference.days_between_min.unwrap_or(1);
+        let max = reference.days_between_max.unwrap_or(1);
+        if min > max {
+            errors.push(format!(
+                "sequence '{}' has days_between_min ({}) > days_between_max ({})",
+                key, min, max
+            ));
+        }
+
+        // Check 4: Reasonable bounds (max should not exceed 1 year)
+        if max > 365 {
+            errors.push(format!("sequence '{}' has unreasonable days_between_max ({}), should be <= 365", key, max));
+        }
+
+        // Check 5: Minimum should be at least 0
+        if min > 365 {
+            errors.push(format!("sequence '{}' has unreasonable days_between_min ({}), should be <= 365", key, min));
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(FormatError::new(
+            "E1111".to_string(),
+            "invalid sequence groups".to_string(),
             errors.join("; "),
         ))
     }

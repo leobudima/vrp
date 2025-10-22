@@ -110,6 +110,22 @@ pub struct JobSync {
     pub tolerance: Option<f64>,
 }
 
+/// Specifies job sequence information for ordered job execution.
+#[derive(Clone, Deserialize, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobSequence {
+    /// Sequence key: jobs with same key must be executed in order.
+    pub key: String,
+    /// Order within sequence (0, 1, 2...).
+    pub order: u32,
+    /// Minimum days/shifts between consecutive jobs (defaults to 1).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub days_between_min: Option<u32>,
+    /// Maximum days/shifts between consecutive jobs (defaults to 1).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub days_between_max: Option<u32>,
+}
+
 /// A customer job model. Actual tasks of the job specified by list of pickups and deliveries
 /// which follows these rules:
 /// * all of them should be completed or none of them.
@@ -158,6 +174,10 @@ pub struct Job {
     /// Same assignee key: jobs with same key are assigned to the same vehicle across routes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub same_assignee_key: Option<String>,
+
+    /// Job sequence: specifies ordered execution with configurable gaps between jobs.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sequence: Option<JobSequence>,
 
     /// Job synchronization: requires multiple vehicles to work on the same job simultaneously.
     #[serde(skip_serializing_if = "Option::is_none")]

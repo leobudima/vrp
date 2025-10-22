@@ -101,6 +101,7 @@ mod actual {
                 affinity: None,
                 same_assignee_key: None,
                 sync: None,
+                sequence: None,
             })
             .collect();
 

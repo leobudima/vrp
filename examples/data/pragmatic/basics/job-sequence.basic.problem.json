@@ -1,0 +1,262 @@
+{
+	"plan": {
+		"jobs": [
+			{
+				"id": "installation_day1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 1.0,
+									"lng": 1.0
+								},
+								"duration": 300,
+								"times": [["2024-07-04T09:00:00Z", "2024-07-04T17:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "customer1_installation",
+					"order": 0,
+					"days_between_min": 1,
+					"days_between_max": 1
+				}
+			},
+			{
+				"id": "installation_day2",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 2.0,
+									"lng": 2.0
+								},
+								"duration": 400,
+								"times": [["2024-07-05T09:00:00Z", "2024-07-05T17:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "customer1_installation",
+					"order": 1,
+					"days_between_min": 1,
+					"days_between_max": 1
+				}
+			},
+			{
+				"id": "installation_day3",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 3.0,
+									"lng": 3.0
+								},
+								"duration": 350,
+								"times": [["2024-07-06T09:00:00Z", "2024-07-06T17:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "customer1_installation",
+					"order": 2,
+					"days_between_min": 1,
+					"days_between_max": 1
+				}
+			},
+			{
+				"id": "maintenance_visit1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 4.0,
+									"lng": 4.0
+								},
+								"duration": 200,
+								"times": [["2024-07-04T10:00:00Z", "2024-07-04T16:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "customer2_maintenance",
+					"order": 0,
+					"days_between_min": 3,
+					"days_between_max": 7
+				}
+			},
+			{
+				"id": "maintenance_visit2",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 5.0,
+									"lng": 5.0
+								},
+								"duration": 250,
+								"times": [["2024-07-08T10:00:00Z", "2024-07-10T16:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "customer2_maintenance",
+					"order": 1,
+					"days_between_min": 3,
+					"days_between_max": 7
+				}
+			},
+			{
+				"id": "regular_job",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 6.0,
+									"lng": 6.0
+								},
+								"duration": 300,
+								"times": [["2024-07-04T08:00:00Z", "2024-07-04T18:00:00Z"]]
+							}
+						],
+						"demand": [1]
+					}
+				]
+			}
+		]
+	},
+	"fleet": {
+		"vehicles": [
+			{
+				"typeId": "technician",
+				"vehicleIds": ["tech_001", "tech_002"],
+				"profile": { "matrix": "car" },
+				"costs": {
+					"fixed": 22.0,
+					"distance": 0.0002,
+					"time": 0.005
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-04T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-05T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-05T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-06T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-06T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-08T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-08T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-09T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-09T19:00:00Z"
+						}
+					},
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-10T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-10T19:00:00Z"
+						}
+					}
+				],
+				"capacity": [10]
+			}
+		],
+		"profiles": [
+			{
+				"name": "car"
+			}
+		]
+	}
+}

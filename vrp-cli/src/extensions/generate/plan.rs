@@ -72,6 +72,7 @@ pub(crate) fn generate_plan(
                 affinity: job_proto.affinity.clone(),
                 same_assignee_key: job_proto.same_assignee_key.clone(),
                 sync: job_proto.sync.clone(),
+                sequence: job_proto.sequence.clone(),
             }
         })
         .collect();

@@ -15,6 +15,7 @@ mod priorities;
 mod recharge;
 mod relations;
 mod reload;
+mod sequence;
 mod skills;
 mod timing;
 mod tour_shape;

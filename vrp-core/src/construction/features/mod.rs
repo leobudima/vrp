@@ -32,6 +32,13 @@ pub use self::vehicle_affinity::{JobAffinityDimension, JobAffinitySequenceDimens
 mod same_assignee;
 pub use self::same_assignee::{JobSameAssigneeKeyDimension, create_same_assignee_feature};
 
+mod job_sequence;
+pub use self::job_sequence::{
+    JobSequenceKeyDimension, JobSequenceOrderDimension, JobSequenceDaysBetweenMinDimension,
+    JobSequenceDaysBetweenMaxDimension, JobSequenceConfig, create_job_sequence_feature,
+    create_job_sequence_feature_with_config,
+};
+
 mod sync;
 pub use self::sync::{
     JobSyncGroupDimension,

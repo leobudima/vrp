@@ -13,7 +13,9 @@ pub fn create_empty_job() -> Job {
         group: None,
         compatibility: None,
         affinity: None,
+        same_assignee_key: None,
         sync: None,
+        sequence: None,
     }
 }
 

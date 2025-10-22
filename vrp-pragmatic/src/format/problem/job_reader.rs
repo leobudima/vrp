@@ -8,7 +8,8 @@ use std::sync::Arc;
 use vrp_core::{
     construction::features::{
         BreakPolicy, JobAffinityDimension, JobAffinitySequenceDimension, JobAffinityDurationDaysDimension, JobCompatibilityDimension, JobDemandDimension, JobGroupDimension, JobSkills as FeatureJobSkills,
-        JobSameAssigneeKeyDimension, JobSkillsDimension, JobSyncGroupDimension, JobSyncIndexDimension, JobSyncSizeDimension, JobSyncToleranceDimension,
+        JobSameAssigneeKeyDimension, JobSequenceKeyDimension, JobSequenceOrderDimension, JobSequenceDaysBetweenMinDimension, JobSequenceDaysBetweenMaxDimension,
+        JobSkillsDimension, JobSyncGroupDimension, JobSyncIndexDimension, JobSyncSizeDimension, JobSyncToleranceDimension,
     },
     models::common::*,
     models::problem::{
@@ -433,6 +434,14 @@ fn fill_dimens(job: &ApiJob, dimens: &mut Dimensions) {
 
     if let Some(assignee_key) = job.same_assignee_key.clone() {
         dimens.set_job_same_assignee_key(assignee_key);
+    }
+
+    if let Some(sequence) = job.sequence.clone() {
+        dimens.set_job_sequence_key(sequence.key);
+        dimens.set_job_sequence_order(sequence.order);
+        // Set defaults to 1 (consecutive days/shifts) if not specified
+        dimens.set_job_sequence_days_between_min(sequence.days_between_min.unwrap_or(1));
+        dimens.set_job_sequence_days_between_max(sequence.days_between_max.unwrap_or(1));
     }
 
     if let Some(sync) = job.sync.clone() {

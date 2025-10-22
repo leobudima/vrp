@@ -1,0 +1,113 @@
+{
+	"plan": {
+		"jobs": [
+			{
+				"id": "step1",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 1.0,
+									"lng": 1.0
+								},
+								"duration": 300
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "flexible_sequence",
+					"order": 0,
+					"days_between_min": 0,
+					"days_between_max": 10
+				}
+			},
+			{
+				"id": "step2",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 2.0,
+									"lng": 2.0
+								},
+								"duration": 400
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "flexible_sequence",
+					"order": 1,
+					"days_between_min": 0,
+					"days_between_max": 10
+				}
+			},
+			{
+				"id": "step3",
+				"deliveries": [
+					{
+						"places": [
+							{
+								"location": {
+									"lat": 3.0,
+									"lng": 3.0
+								},
+								"duration": 350
+							}
+						],
+						"demand": [1]
+					}
+				],
+				"sequence": {
+					"key": "flexible_sequence",
+					"order": 2,
+					"days_between_min": 0,
+					"days_between_max": 10
+				}
+			}
+		]
+	},
+	"fleet": {
+		"vehicles": [
+			{
+				"typeId": "flexible_worker",
+				"vehicleIds": ["worker_001"],
+				"profile": { "matrix": "car" },
+				"costs": {
+					"fixed": 22.0,
+					"distance": 0.0002,
+					"time": 0.005
+				},
+				"shifts": [
+					{
+						"start": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"earliest": "2024-07-04T08:00:00Z"
+						},
+						"end": {
+							"location": {
+								"lat": 0.0,
+								"lng": 0.0
+							},
+							"latest": "2024-07-04T19:00:00Z"
+						}
+					}
+				],
+				"capacity": [10]
+			}
+		],
+		"profiles": [
+			{
+				"name": "car"
+			}
+		]
+	}
+}
